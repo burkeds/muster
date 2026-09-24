@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { NodeResponse } from '@tiled/client-core';
 import { NodeGrid } from '@/components/common/NodeGrid';
@@ -7,6 +6,7 @@ import { StatusLine } from '@/components/common/StatusLine';
 import { StateMessage } from '@/components/common/StateMessage';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { useContainerListing } from './useContainerListing';
 
 const PAGE_LIMIT = 60;
@@ -19,7 +19,7 @@ export interface ContainerViewProps {
 /** List the children of a container node (reuses the browse grid). */
 export function ContainerView({ segments, metadata }: ContainerViewProps) {
   const navigate = useNavigate();
-  const [hideEmpty, setHideEmpty] = useState(false);
+  const [hideEmpty, setHideEmpty] = usePersistedBoolean('muster:hide-empty', false);
 
   const { resources, total, hiddenCount, offset, setOffset, query } = useContainerListing({
     segments,

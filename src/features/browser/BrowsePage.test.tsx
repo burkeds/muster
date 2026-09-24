@@ -73,6 +73,9 @@ function baseResult(overrides: Record<string, unknown> = {}) {
 describe('BrowsePage', () => {
   beforeEach(() => {
     mockUseNodeMetadata.mockReturnValue({ data: undefined, isLoading: false });
+    // The "hide empty containers" preference is persisted to localStorage; reset
+    // it so tests never inherit state toggled by an earlier test.
+    localStorage.clear();
   });
 
   it('renders children with breadcrumbs and status', () => {

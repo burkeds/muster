@@ -16,12 +16,17 @@ export function StateMessage({ kind, title, description, className }: StateMessa
   const Icon = kind === 'loading' ? Loader2 : kind === 'error' ? AlertCircle : PackageOpen;
   return (
     <div
+      role={kind === 'error' ? 'alert' : kind === 'loading' ? 'status' : undefined}
+      aria-live={kind === 'loading' ? 'polite' : undefined}
       className={cn(
         'flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-10 text-center text-muted-foreground',
         className,
       )}
     >
-      <Icon className={cn('h-8 w-8', kind === 'loading' && 'animate-spin')} />
+      <Icon
+        aria-hidden="true"
+        className={cn('h-8 w-8', kind === 'loading' && 'animate-spin')}
+      />
       <p className="text-sm font-medium">{title}</p>
       {description ? <p className="text-xs">{description}</p> : null}
     </div>

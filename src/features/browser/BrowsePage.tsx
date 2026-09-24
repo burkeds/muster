@@ -14,6 +14,7 @@ import { DownloadDialog } from '@/features/download/DownloadDialog';
 import { H5ViewLauncher } from '@/features/h5/H5ViewLauncher';
 import { supportsHdf5 } from '@tiled/client-h5web';
 import { useContainerListing } from '@/features/node/useContainerListing';
+import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { MetadataPanel } from '@/features/metadata/MetadataPanel';
 import { Download, Info, RefreshCw } from 'lucide-react';
 import type { Resource, NodeAttributes, NodeResponse } from '@tiled/client-core';
@@ -31,7 +32,7 @@ export function BrowsePage() {
   const segments = (params['*'] ?? '').split('/').filter(Boolean);
   const navigate = useNavigate();
   const [downloadOpen, setDownloadOpen] = useState(false);
-  const [hideEmpty, setHideEmpty] = useState(false);
+  const [hideEmpty, setHideEmpty] = usePersistedBoolean('muster:hide-empty', false);
   const [showMetadata, setShowMetadata] = useState(false);
 
   const { resources, total, hiddenCount, offset, setOffset, query } = useContainerListing({

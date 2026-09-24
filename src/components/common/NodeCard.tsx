@@ -5,14 +5,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Resource, NodeAttributes, StructureFamily } from '@tiled/client-core';
 
-const FAMILY_META: Record<StructureFamily, { label: string; icon: ReactNode }> = {
-  container: { label: 'Container', icon: <Folders /> },
-  array: { label: 'Array', icon: <Grid3x3 /> },
-  table: { label: 'Table', icon: <Table2 /> },
-  sparse: { label: 'Sparse', icon: <Braces /> },
-  awkward: { label: 'Awkward', icon: <Braces /> },
-  ragged: { label: 'Ragged', icon: <Rows3 /> },
-  bytes: { label: 'Bytes', icon: <Box /> },
+const FAMILY_META: Record<
+  StructureFamily,
+  { label: string; icon: ReactNode; description: string }
+> = {
+  container: {
+    label: 'Container',
+    icon: <Folders />,
+    description: 'A group that can contain other nodes (data or containers).',
+  },
+  array: { label: 'Array', icon: <Grid3x3 />, description: 'Multidimensional numeric data (e.g. an image or spectrum).' },
+  table: { label: 'Table', icon: <Table2 />, description: 'Tabular data with named columns and rows.' },
+  sparse: { label: 'Sparse', icon: <Braces />, description: 'Array data stored as sparse coordinate/value pairs.' },
+  awkward: { label: 'Awkward', icon: <Braces />, description: 'Awkward-array data (jagged/nested variable-length data).' },
+  ragged: { label: 'Ragged', icon: <Rows3 />, description: 'Ragged (variable-length) array data.' },
+  bytes: { label: 'Bytes', icon: <Box />, description: 'Raw byte assets.' },
 };
 
 export function familyBadge(family?: StructureFamily, containerCount?: number): ReactNode {
@@ -25,8 +32,8 @@ export function familyBadge(family?: StructureFamily, containerCount?: number): 
         : undefined
       : undefined;
   return (
-    <Badge variant="secondary" className="gap-1">
-      {meta.icon}
+    <Badge variant="secondary" className="gap-1" title={meta.description}>
+      <span aria-hidden="true">{meta.icon}</span>
       {meta.label}
       {count !== undefined ? ` · ${count}` : ''}
     </Badge>
@@ -52,9 +59,18 @@ export function NodeCard({ resource, name, onClick, isLink, footer }: NodeCardPr
 
   return (
     <Card
+      role="button"
+      tabIndex={0}
+      aria-label={name}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       className={cn(
-        'cursor-pointer transition-shadow hover:shadow-md',
+        'cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         isLink && 'ring-1 ring-ring/40',
       )}
     >

@@ -4,7 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/tiled-icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>Muster · Tiled Web Client</title>
+    <script>
+      // Apply the saved/OS theme before first paint to avoid a flash of the
+      // wrong theme (kept in sync with ThemeProvider:localStorage 'muster:theme').
+      (function () {
+        try {
+          var t = localStorage.getItem('muster:theme');
+          if (t !== 'light' && t !== 'dark' && t !== 'system') t = 'system';
+          var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
