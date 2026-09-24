@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ThemeContext, THEME_STORAGE_KEY, type Theme, type ThemeMode } from './theme-ctx';
+import { ThemeContext, THEME_STORAGE_KEY, PLOT_STORAGE_KEY, type Theme, type ThemeMode } from './theme-ctx';
+import {
+  DEFAULT_PLOT_SCHEME,
+  type PlotPalette,
+  type PlotSchemePref,
+  type PlotThemeMode,
+} from '@/lib/plotTheme';
 
 function readStoredMode(): ThemeMode {
   try {
@@ -9,6 +15,25 @@ function readStoredMode(): ThemeMode {
     /* ignore */
   }
   return 'system';
+}
+
+function readStoredPlotScheme(): PlotSchemePref {
+  try {
+    const raw = localStorage.getItem(PLOT_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<PlotSchemePref>;
+      const mode: PlotThemeMode =
+        parsed.mode === 'light' || parsed.mode === 'dark' || parsed.mode === 'auto'
+          ? parsed.mode
+          : 'auto';
+      const palette: PlotPalette =
+        parsed.palette === 'viridis' || parsed.palette === 'plotly' ? parsed.palette : 'cvd';
+      return { mode, palette };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { ...DEFAULT_PLOT_SCHEME };
 }
 
 function currentSystemTheme(): Theme {
@@ -29,6 +54,7 @@ function currentSystemTheme(): Theme {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<ThemeMode>(readStoredMode);
   const [systemPref, setSystemPref] = useState<Theme>(currentSystemTheme);
+  const [plotScheme, setPlotScheme] = useState<PlotSchemePref>(readStoredPlotScheme);
 
   // Track live OS preference changes.
   useEffect(() => {
@@ -50,9 +76,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [mode, resolvedTheme]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(PLOT_STORAGE_KEY, JSON.stringify(plotScheme));
+    } catch {
+      /* ignore */
+    }
+  }, [plotScheme]);
+
   const value = useMemo(
-    () => ({ mode, resolvedTheme, setMode }),
-    [mode, resolvedTheme],
+    () => ({ mode, resolvedTheme, setMode, plotScheme, setPlotScheme }),
+    [mode, resolvedTheme, plotScheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

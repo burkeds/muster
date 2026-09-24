@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react';
 import type { ArrayStructure, NodeResponse } from '@tiled/client-core';
 import { useArrayData } from '@/hooks/useArrayData';
 import { PlotlyPlot } from '@/lib/plot';
+import { resolveSequentialScale } from '@/lib/plotTheme';
+import { useOptionalPlotScheme } from '@/lib/usePlotScheme';
 import { PlotCard } from '@/components/viz/PlotCard';
 import { VizTypePicker } from '@/components/viz/VizTypePicker';
 import { StatusLine } from '@/components/common/StatusLine';
@@ -176,6 +178,8 @@ function Array2DPlot({
   const [view, setView] = useState<string>('Heatmap');
   const [gd, setGd] = useState<HTMLDivElement | null>(null);
   const z = to2D(data) as number[][];
+  const scheme = useOptionalPlotScheme();
+  const colorscale = resolveSequentialScale(scheme.resolved);
 
   return (
     <div className="flex flex-col gap-2">
@@ -198,7 +202,7 @@ function Array2DPlot({
                 | 'heatmap'
                 | 'contour'
                 | 'surface',
-              colorscale: 'Viridis',
+              colorscale,
             },
           ]}
         />

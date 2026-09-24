@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { DisplaySettings } from "@/components/theme/DisplaySettings";
 import type { NavRouteItem } from "@/types/navigation";
 
 export interface AppLayoutProps {
@@ -26,7 +26,7 @@ export function AppLayout({ routes, brand, headerActions }: AppLayoutProps) {
           <span className="text-sm font-semibold">Muster</span>
           <div className="flex items-center gap-2">
             {headerActions}
-            <ThemeToggle />
+            <DisplaySettings />
           </div>
         </header>
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto p-4 focus:outline-none">
