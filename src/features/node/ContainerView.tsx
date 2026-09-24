@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { NodeResponse } from '@tiled/client-core';
+import type { NodeResponse, SearchOptions } from '@tiled/client-core';
 import { NodeGrid } from '@/components/common/NodeGrid';
 import { Pagination } from '@/components/common/Pagination';
 import { StatusLine } from '@/components/common/StatusLine';
@@ -7,6 +8,7 @@ import { StateMessage } from '@/components/common/StateMessage';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
+import { ContainerFilter } from '@/features/search/ContainerFilter';
 import { useContainerListing } from './useContainerListing';
 
 const PAGE_LIMIT = 60;
@@ -20,10 +22,12 @@ export interface ContainerViewProps {
 export function ContainerView({ segments, metadata }: ContainerViewProps) {
   const navigate = useNavigate();
   const [hideEmpty, setHideEmpty] = usePersistedBoolean('muster:hide-empty', false);
+  const [filter, setFilter] = useState<SearchOptions['filter'] | undefined>(undefined);
 
   const { resources, total, hiddenCount, offset, setOffset, query } = useContainerListing({
     segments,
     hideEmpty,
+    filter,
   });
 
   // Fall back to the container's advertised child count before the listing loads.
@@ -50,12 +54,23 @@ export function ContainerView({ segments, metadata }: ContainerViewProps) {
         <StatusLine
           className="text-xs text-muted-foreground"
           text={
-            hiddenCount > 0
+            filter && Object.keys(filter).length > 0
+              ? `Container · ${total} filtered result(s)${
+                  hiddenCount > 0 ? ` · ${hiddenCount} empty hidden` : ''
+                }`
+              : hiddenCount > 0
               ? `Container · ${total} children · ${hiddenCount} empty hidden`
               : `Container · ${total || listedCount} children`
           }
         />
       </div>
+
+      <ContainerFilter
+        filter={filter}
+        onApply={(f) => setFilter(f)}
+        onClear={() => setFilter(undefined)}
+      />
+
       {query.isError ? (
         <StateMessage kind="error" title="Failed to load contents" />
       ) : query.isLoading ? (

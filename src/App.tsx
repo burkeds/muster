@@ -1,10 +1,9 @@
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
-import { Compass, Search as SearchIcon, LogIn, LogOut } from 'lucide-react';
+import { Compass, LogIn, LogOut } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ServerSelector } from '@/components/layout/ServerSelector';
 import { BrowsePage } from '@/features/browser/BrowsePage';
 import { NodeDetailPage } from '@/features/node/NodeDetailPage';
-import { SearchPage } from '@/features/search/SearchPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { AuthCallbackPage } from '@/features/auth/AuthCallbackPage';
 import { WelcomeScreen } from '@/features/connect/WelcomeScreen';
@@ -21,12 +20,6 @@ const navRoutes: NavRouteItem[] = [
     label: 'Browse',
     icon: <Compass className="h-4 w-4" />,
     element: <BrowsePage />,
-  },
-  {
-    path: '/search',
-    label: 'Search',
-    icon: <SearchIcon className="h-4 w-4" />,
-    element: <SearchPage />,
   },
 ];
 
@@ -103,7 +96,7 @@ export default function App() {
           path="search"
           element={
             <RequireServer>
-              <SearchPage />
+              <Navigate to="/browse" replace />
             </RequireServer>
           }
         />

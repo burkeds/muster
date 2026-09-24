@@ -17,8 +17,9 @@ import { useServerInfo } from '@/hooks/useServerInfo';
 import { useContainerListing } from '@/features/node/useContainerListing';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { MetadataPanel } from '@/features/metadata/MetadataPanel';
+import { ContainerFilter } from '@/features/search/ContainerFilter';
 import { Download, Info, RefreshCw } from 'lucide-react';
-import type { Resource, NodeAttributes, NodeResponse } from '@tiled/client-core';
+import type { Resource, NodeAttributes, NodeResponse, SearchOptions } from '@tiled/client-core';
 
 const PAGE_LIMIT = 60;
 
@@ -35,10 +36,12 @@ export function BrowsePage() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [hideEmpty, setHideEmpty] = usePersistedBoolean('muster:hide-empty', false);
   const [showMetadata, setShowMetadata] = useState(false);
+  const [filter, setFilter] = useState<SearchOptions['filter'] | undefined>(undefined);
 
   const { resources, total, hiddenCount, offset, setOffset, query } = useContainerListing({
     segments,
     hideEmpty,
+    filter,
   });
 
   // The current container's own metadata determines whether it offers HDF5.
@@ -81,7 +84,11 @@ export function BrowsePage() {
           <StatusLine
             className="mt-1"
             text={
-              hiddenCount > 0
+              filter && Object.keys(filter).length > 0
+                ? `Browse${pathLabel} · filtered · ${total} result(s)${
+                    hiddenCount > 0 ? ` · ${hiddenCount} empty hidden` : ''
+                  }`
+                : hiddenCount > 0
                 ? `Browse${pathLabel} · ${hiddenCount} empty hidden`
                 : `Browse${pathLabel}`
             }
@@ -115,6 +122,12 @@ export function BrowsePage() {
           </Button>
         </div>
       </div>
+
+      <ContainerFilter
+        filter={filter}
+        onApply={(f) => setFilter(f)}
+        onClear={() => setFilter(undefined)}
+      />
 
       {showMetadata ? (
         canExportContainer ? (

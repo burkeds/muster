@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNodeSearch } from '@/hooks/useNodeSearch';
-import type { Resource, NodeAttributes } from '@tiled/client-core';
+import type { Resource, NodeAttributes, SearchOptions } from '@tiled/client-core';
 import { isContainerEmpty } from './utils';
 
 /** Server-side max page size Tiled accepts per request. */
@@ -8,7 +8,8 @@ export const MAX_FETCH_LIMIT = 300;
 
 /**
  * Listing of a container's children with an optional "hide empty containers"
- * mode. When enabled we fetch up to `MAX_FETCH_LIMIT` children in one request,
+ * mode and an optional server-side search `filter` (scoped to this container).
+ * When hiding empties we fetch up to `MAX_FETCH_LIMIT` children in one request,
  * drop empty containers client-side, then paginate the filtered set locally.
  * Otherwise the server paginates normally.
  */
@@ -16,21 +17,24 @@ export function useContainerListing(params: {
   segments: string[];
   pageSize?: number;
   hideEmpty?: boolean;
+  /** Tiled search filter scoped to this container (AND-combined). */
+  filter?: SearchOptions['filter'];
 }) {
-  const { segments, pageSize = 60, hideEmpty = false } = params;
+  const { segments, pageSize = 60, hideEmpty = false, filter } = params;
   const [offset, setOffset] = useState(0);
   const pathKey = segments.join('/');
 
-  // Always begin at the top when the path or the filter changes.
+  // Always begin at the top when the path, the filter or the mode changes.
   useEffect(() => {
     setOffset(0);
-  }, [pathKey, hideEmpty]);
+  }, [pathKey, hideEmpty, filter]);
 
   const query = useNodeSearch({
     segments,
     pageOffset: hideEmpty ? 0 : offset,
     pageLimit: hideEmpty ? MAX_FETCH_LIMIT : pageSize,
     fields: ['structure_family', 'structure', 'metadata'],
+    filter,
   });
 
   const all = query.data?.data ?? [];
@@ -47,6 +51,8 @@ export function useContainerListing(params: {
     hiddenCount,
     offset,
     setOffset,
+    filter,
+    hasFilter: !!filter && Object.keys(filter).length > 0,
     query,
   };
 }

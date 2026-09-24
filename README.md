@@ -26,6 +26,7 @@ as **git submodules** / npm workspace packages):
 | `tiled-client-h5web/`     | `@tiled/client-h5web`| Modular h5web explorer over a `TiledClientLike` object         |
 | this directory           | `muster`            | The React app (browse/search/view/download/stream)             |
 
+
 The plugins live in this repo as git submodules and are linked as npm workspaces:
 
 ```jsonc
@@ -194,9 +195,8 @@ for a full explanation of how the client drives h5web through the Tiled API.
 | ---------------- | -------------------------------------------------------------------------------------------------------- |
 | `/`              | Connect screen (if no server selected) or redirect to `/browse`                                          |
 | `/connect`       | Pick/add a Tiled server to connect to                                                                    |
-| `/browse/*`      | Node browser/explorer (container listing + navigation); HDF5 containers offer a "View with H5Web" button |
-| `/node/*`        | Node detail (per-family views in tabs: View/Download/Metadata/Live)                                      |
-| `/search`        | Search UI (fulltext/metadata/comparison/family filters)                                                  |
+| `/browse/*`      | Node browser/explorer (container listing + navigation); offers container-scoped search filters; HDF5 containers offer a "View with H5Web" button |
+| `/node/*`        | Node detail (per-family views in tabs: View/Download/Metadata/Live); container view offers search filters |
 | `/login`         | Sign in (internal password or OIDC redirect)                                                             |
 | `/auth-callback` | OAuth2/OIDC token callback                                                                               |
 
