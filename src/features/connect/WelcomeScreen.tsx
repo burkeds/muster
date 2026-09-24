@@ -1,21 +1,21 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useServers } from '@/config/ServerProvider';
+import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { useServers } from "@/config/ServerProvider";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { StatusLine } from '@/components/common/StatusLine';
-import { StateMessage } from '@/components/common/StateMessage';
-import { Plus, Check, Server as ServerIcon, Trash2 } from 'lucide-react';
-import type { Server } from '@/config/Servers';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { StatusLine } from "@/components/common/StatusLine";
+import { StateMessage } from "@/components/common/StateMessage";
+import { Plus, Check, Server as ServerIcon, Trash2 } from "lucide-react";
+import type { Server } from "@/config/Servers";
 
 interface ServerRowProps {
   server: Server;
@@ -40,7 +40,11 @@ function ServerRow({ server, isActive, onConnect, onRemove }: ServerRowProps) {
         ) : (
           <Badge variant="outline">Configured</Badge>
         )}
-        <Button size="sm" variant="outline" onClick={() => onConnect(server.id)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onConnect(server.id)}
+        >
           <Check />
           Connect
         </Button>
@@ -53,16 +57,17 @@ function ServerRow({ server, isActive, onConnect, onRemove }: ServerRowProps) {
 }
 
 export function WelcomeScreen() {
-  const { servers, activeServer, selectServer, addServer, removeServer } = useServers();
+  const { servers, activeServer, selectServer, addServer, removeServer } =
+    useServers();
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [url, setUrl] = useState('');
-  const [apiKey, setApiKey] = useState('');
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const connect = (id: string) => {
     selectServer(id);
-    navigate('/browse', { replace: true });
+    navigate("/browse", { replace: true });
   };
 
   const addAndConnect = (e: FormEvent) => {
@@ -78,20 +83,27 @@ export function WelcomeScreen() {
   return (
     <div className="mx-auto mt-10 flex max-w-2xl flex-col gap-6 px-4">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Tiled Web Client</h1>
+        <h1 className="text-2xl font-bold">Muster</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pick a Tiled server to connect to, or add your own.
+          A Tiled web client. Pick a Tiled server to connect to, or add your
+          own.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Available servers</CardTitle>
-          <CardDescription>Choose where to browse or search data.</CardDescription>
+          <CardDescription>
+            Choose where to browse or search data.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           {servers.length === 0 ? (
-            <StateMessage kind="empty" title="No servers" description="Add a server below." />
+            <StateMessage
+              kind="empty"
+              title="No servers"
+              description="Add a server below."
+            />
           ) : (
             servers.map((s) => (
               <ServerRow
@@ -109,7 +121,9 @@ export function WelcomeScreen() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Add a server</CardTitle>
-          <CardDescription>Enter a name, its base URL, and an optional API key.</CardDescription>
+          <CardDescription>
+            Enter a name, its base URL, and an optional API key.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={addAndConnect} className="flex flex-col gap-3">

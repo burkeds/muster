@@ -1,6 +1,6 @@
 # How the client integrates h5web with the Tiled API
 
-This document explains how the tiled-web-client embeds the
+This document explains how Muster (a Tiled web client) embeds the
 [h5web](https://github.com/silx-kit/h5web) HDF5 explorer (`@h5web/app`) and drives it
 entirely through the Tiled HTTP API — no direct filesystem or HDF5 access.
 

@@ -1,7 +1,7 @@
-# tiled-web-client
+# Muster
 
-A generic React web client for [Tiled](https://blueskyproject.io/tiled) — search,
-data browsing, slicing, download/format conversion, and live streaming.
+Muster is a generic React web client for [Tiled](https://blueskyproject.io/tiled) —
+search, data browsing, slicing, download/format conversion, and live streaming.
 
 ## Stack
 
@@ -24,7 +24,7 @@ as **git submodules** / npm workspace packages):
 | ------------------------- | -------------------- | ------------------------------------------------------------- |
 | `tiled-client-core/`      | `@tiled/client-core` | Standalone, framework-agnostic `TiledClient` for the Tiled API |
 | `tiled-client-h5web/`     | `@tiled/client-h5web`| Modular h5web explorer over a `TiledClientLike` object         |
-| this directory           | `tiled-web-client`   | The React app (browse/search/view/download/stream)             |
+| this directory           | `muster`            | The React app (browse/search/view/download/stream)             |
 
 The plugins live in this repo as git submodules and are linked as npm workspaces:
 
@@ -122,14 +122,14 @@ reads it and falls back to the build-time `VITE_*` env vars when unset):
 ### Build and run
 
 ```bash
-# build (from the client/ directory)
-docker build -t tiled-web-client .
+# build (from the muster/ directory)
+docker build -t muster .
 
 # run, configuring the Tiled server at start time
 docker run -d -p 8080:80 \
   -e TILED_API_URL=https://tiled.desy.de/api/v1 \
   -e TILED_API_KEY=your-key \
-  tiled-web-client
+  muster
 ```
 
 Then open http://localhost:8080. The value of `TILED_API_URL` seeds the first

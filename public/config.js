@@ -1,4 +1,4 @@
-// Runtime configuration for the Tiled web client.
+// Runtime configuration for Muster (a Tiled web client).
 //
 // This file is served as-is in the built app and is OVERWRITTEN at container
 // start by the Docker entrypoint (docker-entrypoint.sh) with the values of the

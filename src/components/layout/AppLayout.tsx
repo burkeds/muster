@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
-import { Outlet } from 'react-router-dom';
-import { Sidebar } from './Sidebar';
-import type { NavRouteItem } from '@/types/navigation';
+import type { ReactNode } from "react";
+import { Outlet } from "react-router-dom";
+import { Sidebar } from "./Sidebar";
+import type { NavRouteItem } from "@/types/navigation";
 
 export interface AppLayoutProps {
   routes: NavRouteItem[];
@@ -16,7 +16,7 @@ export function AppLayout({ routes, brand, headerActions }: AppLayoutProps) {
       <Sidebar routes={routes} brand={brand} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card px-4">
-          <span className="text-sm font-semibold">Tiled Web Client</span>
+          <span className="text-sm font-semibold">Muster</span>
           <div className="flex items-center gap-2">{headerActions}</div>
         </header>
         <main className="flex-1 overflow-auto p-4">
