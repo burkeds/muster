@@ -40,9 +40,12 @@ export default defineConfig({
     proxy: {
       // Optional: proxy Tiled requests to avoid CORS during local dev.
       // Set VITE_TILED_API_URL=/api/v1 to use relative URLs.
+      // NOTE: keep changeOrigin off — Tiled builds absolute redirect/self URLs
+      // from the request Host. With changeOrigin on, Host becomes
+      // localhost:8000 and Tiled's 307 (and any absolute Location) becomes
+      // cross-origin, which the browser CORS-blocks.
       '/api/v1': {
         target: 'http://localhost:8000',
-        changeOrigin: true,
       },
     },
   },
