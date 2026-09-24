@@ -12,49 +12,125 @@ const renderFilter = (props: Partial<Parameters<typeof ContainerFilter>[0]> = {}
     onClear: vi.fn(),
     ...props,
   };
-  const utils = render(<ContainerFilter {...defaults} />);
-  return { ...utils, defaults };
+  render(<ContainerFilter {...defaults} />);
+  return defaults;
 };
+
+const keyInput = (i: number) => screen.getAllByPlaceholderText('key')[i];
+const valueInput = (i: number) => screen.getAllByPlaceholderText('value')[i];
+const searchApply = () => screen.getByRole('button', { name: /Search$/i });
+
+async function expand(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByText('Search this container'));
+}
 
 describe('ContainerFilter', () => {
   it('is collapsed by default and expands to show the search form', async () => {
     const user = userEvent.setup();
-    const { defaults } = renderFilter();
+    renderFilter();
     expect(screen.queryByPlaceholderText('search text')).not.toBeInTheDocument();
-
-    await user.click(screen.getByText('Search this container'));
-
+    await expand(user);
     expect(screen.getByPlaceholderText('search text')).toBeInTheDocument();
-    expect(typeof defaults.onApply).toBe('function');
   });
 
-  it('builds and applies a fulltext + family filter', async () => {
+  it('builds a fulltext filter', async () => {
     const user = userEvent.setup();
     const onApply = vi.fn();
     renderFilter({ onApply });
-
-    await user.click(screen.getByText('Search this container'));
+    await expand(user);
     await user.type(screen.getByPlaceholderText('search text'), 'Ni');
-    // Change the family select via direct interaction is fiddly; apply with fulltext only.
-    await user.click(screen.getByRole('button', { name: /Search$/i }));
+    await user.click(searchApply());
+    expect(onApply).toHaveBeenCalledWith({ fulltext: [['text', 'Ni']] });
+  });
 
+  it('builds an equality filter on a nested (dotted) key', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    renderFilter({ onApply });
+    await expand(user);
+    await user.type(keyInput(0), 'element.name');
+    await user.type(valueInput(0), 'helium');
+    await user.click(searchApply());
     expect(onApply).toHaveBeenCalledWith({
-      fulltext: [['text', 'Ni']],
+      eq: [
+        ['key', 'element.name'],
+        ['value', '"helium"'],
+      ],
+    });
+  });
+
+  it('builds a comparison filter on a nested key', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    renderFilter({ onApply });
+    await expand(user);
+    // key inputs: eq[0], contains[1], in[2], like[3], comparison[4], keypresent[5]
+    // value inputs: eq[0], contains[1], comparison[2]
+    await user.type(keyInput(4), 'element.atomic_number');
+    await user.type(valueInput(2), '2');
+    await user.click(searchApply());
+    expect(onApply).toHaveBeenCalledWith({
+      comparison: [
+        ['key', 'element.atomic_number'],
+        ['operator', 'gt'],
+        ['value', '"2"'],
+      ],
+    });
+  });
+
+  it('builds an "in" filter with comma-separated values on a nested key', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    renderFilter({ onApply });
+    await expand(user);
+    await user.type(keyInput(2), 'element.category');
+    await user.type(screen.getByPlaceholderText('a, b, c'), 'metal, gas');
+    await user.click(searchApply());
+    expect(onApply).toHaveBeenCalledWith({
+      in: [
+        ['key', 'element.category'],
+        ['value', '["metal","gas"]'],
+      ],
+    });
+  });
+
+  it('builds a like filter with a pattern', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    renderFilter({ onApply });
+    await expand(user);
+    await user.type(keyInput(3), 'element.name');
+    await user.type(screen.getByPlaceholderText('pattern'), 'He%');
+    await user.click(searchApply());
+    expect(onApply).toHaveBeenCalledWith({
+      like: [
+        ['key', 'element.name'],
+        ['pattern', 'He%'],
+      ],
+    });
+  });
+
+  it('builds a keypresent filter for a nested key (exists=true)', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    renderFilter({ onApply });
+    await expand(user);
+    await user.type(keyInput(5), 'edges.K');
+    await user.click(searchApply());
+    expect(onApply).toHaveBeenCalledWith({
+      keypresent: [
+        ['key', 'edges.K'],
+        ['exists', 'true'],
+      ],
     });
   });
 
   it('labels the trigger when a filter is active and clears it', async () => {
     const user = userEvent.setup();
     const onClear = vi.fn();
-    renderFilter({
-      filter: { eq: [['key', 'sample'], ['value', '"X"']] },
-      onClear,
-    });
-
+    renderFilter({ filter: { eq: [['key', 'sample'], ['value', '"X"']] }, onClear });
     expect(screen.getByText('Filtering this container')).toBeInTheDocument();
-
     await user.click(screen.getByRole('button', { name: /Clear/i }));
-
     expect(onClear).toHaveBeenCalled();
   });
 });

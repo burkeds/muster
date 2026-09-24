@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { ContainerFilter } from '@/features/search/ContainerFilter';
+import { appContainerMetadataKeys } from '@/features/search/metadataKeys';
 import { useContainerListing } from './useContainerListing';
 
 const PAGE_LIMIT = 60;
@@ -33,6 +34,7 @@ export function ContainerView({ segments, metadata }: ContainerViewProps) {
   // Fall back to the container's advertised child count before the listing loads.
   const listedCount =
     (metadata.data?.attributes?.structure as { count?: number } | undefined)?.count ?? 0;
+  const metadataKeys = appContainerMetadataKeys(resources);
 
   const handleSelect = (name: string, r: (typeof resources)[number]) => {
     const family = r.attributes?.structure_family;
@@ -69,6 +71,7 @@ export function ContainerView({ segments, metadata }: ContainerViewProps) {
         filter={filter}
         onApply={(f) => setFilter(f)}
         onClear={() => setFilter(undefined)}
+        metadataKeys={metadataKeys}
       />
 
       {query.isError ? (

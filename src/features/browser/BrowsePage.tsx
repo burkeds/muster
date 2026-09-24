@@ -18,6 +18,7 @@ import { useContainerListing } from '@/features/node/useContainerListing';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { MetadataPanel } from '@/features/metadata/MetadataPanel';
 import { ContainerFilter } from '@/features/search/ContainerFilter';
+import { appContainerMetadataKeys } from '@/features/search/metadataKeys';
 import { Download, Info, RefreshCw } from 'lucide-react';
 import type { Resource, NodeAttributes, NodeResponse, SearchOptions } from '@tiled/client-core';
 
@@ -75,6 +76,7 @@ export function BrowsePage() {
   const pathLabel = segments.length ? ` /${segments.join('/')}` : ' (root)';
   // Browsing a container path means the current node itself is a container.
   const canExportContainer = segments.length > 0;
+  const metadataKeys = appContainerMetadataKeys(resources);
 
   return (
     <div className="flex flex-col gap-3">
@@ -127,6 +129,7 @@ export function BrowsePage() {
         filter={filter}
         onApply={(f) => setFilter(f)}
         onClear={() => setFilter(undefined)}
+        metadataKeys={metadataKeys}
       />
 
       {showMetadata ? (
