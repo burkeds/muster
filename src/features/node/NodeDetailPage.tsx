@@ -12,7 +12,8 @@ import { TableView } from '@/features/table/TableView';
 import { ContainerView } from './ContainerView';
 import { BytesView, SparseView, AwkwardView, RaggedView } from './MiscViews';
 import { H5ViewLauncher } from '@/features/h5/H5ViewLauncher';
-import { supportsHdf5 } from '@tiled/client-h5web';
+import { useH5ExploreState } from '@/features/h5/useH5ExploreState';
+import { useServerInfo } from '@/hooks/useServerInfo';
 import { DownloadDialog } from '@/features/download/DownloadDialog';
 import { MetadataPanel } from '@/features/metadata/MetadataPanel';
 import { StreamView } from '@/features/stream/StreamView';
@@ -30,6 +31,13 @@ export function NodeDetailPage() {
     segments,
     fields: ['structure_family', 'structure', 'specs', 'metadata', 'data_sources'],
     includeDataSources: true,
+  });
+
+  const server = useServerInfo();
+  const { available, compatible } = useH5ExploreState({
+    segments,
+    metadata: query.data,
+    containerFormats: server.data?.formats?.container,
   });
 
   if (segments.length === 0) {
@@ -69,7 +77,9 @@ export function NodeDetailPage() {
               <TabsTrigger value="live">Live</TabsTrigger>
             ) : null}
           </TabsList>
-          <TabsContent value="view">{renderView(family, segments, metadata)}</TabsContent>
+          <TabsContent value="view">
+            {renderView(family, segments, metadata, available, compatible)}
+          </TabsContent>
           <TabsContent value="download">
             <Button variant="outline" onClick={() => setDownloadOpen(true)}>
               Download this node
@@ -100,6 +110,8 @@ function renderView(
   family: string | undefined,
   segments: string[],
   metadata: NonNullable<ReturnType<typeof useNodeMetadata>['data']>,
+  available: boolean,
+  compatible: boolean,
 ) {
   switch (family) {
     case 'array':
@@ -107,10 +119,14 @@ function renderView(
     case 'table':
       return <TableView segments={segments} metadata={metadata} />;
     case 'container':
-      // HDF5-backed containers get a "View with H5Web" button; otherwise they
-      // render as a normal child listing.
+      // Containers offering the HDF5 format get a "View with H5Web" button; it
+      // is greyed out when the subtree is not explorable.
       return (
-        <H5ViewLauncher segments={segments} enabled={supportsHdf5(metadata)}>
+        <H5ViewLauncher
+          segments={segments}
+          available={available}
+          compatible={compatible}
+        >
           <ContainerView segments={segments} metadata={metadata} />
         </H5ViewLauncher>
       );

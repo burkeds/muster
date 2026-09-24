@@ -12,7 +12,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { DownloadDialog } from '@/features/download/DownloadDialog';
 import { H5ViewLauncher } from '@/features/h5/H5ViewLauncher';
-import { supportsHdf5 } from '@tiled/client-h5web';
+import { useH5ExploreState } from '@/features/h5/useH5ExploreState';
+import { useServerInfo } from '@/hooks/useServerInfo';
 import { useContainerListing } from '@/features/node/useContainerListing';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { MetadataPanel } from '@/features/metadata/MetadataPanel';
@@ -46,7 +47,13 @@ export function BrowsePage() {
     fields: ['structure_family', 'structure', 'specs', 'metadata', 'data_sources'],
     includeDataSources: true,
   });
-  const h5 = supportsHdf5(nodeMeta.data);
+  const server = useServerInfo();
+  const { available, compatible } = useH5ExploreState({
+    segments,
+    metadata: nodeMeta.data,
+    containerFormats: server.data?.formats?.container,
+    childrenFamilies: resources.map((r) => r.attributes?.structure_family),
+  });
 
   const handleSelect = (name: string, resource: Resource<NodeAttributes>) => {
     const family = resource.attributes?.structure_family;
@@ -127,7 +134,7 @@ export function BrowsePage() {
         ) : null
       ) : null}
 
-      <H5ViewLauncher segments={segments} enabled={h5}>
+      <H5ViewLauncher segments={segments} available={available} compatible={compatible}>
         {query.isError ? (
           <StateMessage
             kind="error"

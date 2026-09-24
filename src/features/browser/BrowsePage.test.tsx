@@ -146,6 +146,54 @@ describe('BrowsePage', () => {
     expect(screen.getByText('Back to list')).toBeInTheDocument();
   });
 
+  it('greys out the H5Web button when the container is not explorable', () => {
+    mockUseNodeSearch.mockReturnValue(
+      baseResult({
+        data: {
+          data: [
+            {
+              id: 'images',
+              attributes: {
+                ancestors: ['examples'],
+                structure_family: 'array',
+                structure: { shape: [256, 256] },
+                metadata: {},
+              },
+              links: {},
+              meta: null,
+            },
+            {
+              id: 'log',
+              attributes: {
+                ancestors: ['examples'],
+                structure_family: 'table',
+                structure: { columns: ['a'] },
+                metadata: {},
+              },
+              links: {},
+              meta: null,
+            },
+          ],
+          meta: { count: 2 },
+        },
+      }),
+    );
+    mockUseNodeMetadata.mockReturnValue({
+      data: {
+        data: {
+          id: 'examples',
+          attributes: { structure_family: 'container', data_sources: [] },
+        },
+      },
+      isLoading: false,
+    });
+    renderAt('/browse/examples');
+
+    const button = screen.getByRole('button', { name: 'View with H5Web' });
+    expect(button).toBeInTheDocument();
+    expect(button).toBeDisabled();
+  });
+
   it('hides empty containers when the checkbox is checked', async () => {
     const user = userEvent.setup();
     mockUseNodeSearch.mockReturnValue(
