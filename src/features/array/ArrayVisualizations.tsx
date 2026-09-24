@@ -19,7 +19,15 @@ export interface ArrayViewProps {
 /** Rendering options (line/scatter/bar) for 1-D arrays. */
 const ARRAY_1D_VIEWS = ['Line', 'Scatter', 'Bar'] as const;
 /** Rendering options for 2-D blocks. */
+// TODO(ui): Contour and Surface rendering crashes the app (buggy `z` handling);
+// they are disabled in the picker and re-enabled once the renderer is fixed.
 const ARRAY_2D_VIEWS = ['Heatmap', 'Contour', 'Surface'] as const;
+
+/** Reasons shown when a visualization type is currently disabled. */
+const DISABLED_2D_OPTIONS: Record<string, string> = {
+  Contour: 'Temporarily disabled: contour rendering is unstable (see TODO).',
+  Surface: 'Temporarily disabled: surface rendering is unstable (see TODO).',
+};
 
 /** Primary view for an array node, offering visualization options per ndim. */
 export function ArrayView({ segments, metadata }: ArrayViewProps) {
@@ -184,7 +192,12 @@ function Array2DPlot({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-end">
-        <VizTypePicker options={[...ARRAY_2D_VIEWS]} value={view} onChange={setView} />
+        <VizTypePicker
+          options={[...ARRAY_2D_VIEWS]}
+          value={view}
+          onChange={setView}
+          disabledOptions={DISABLED_2D_OPTIONS}
+        />
       </div>
       <PlotCard
         title={filename}
