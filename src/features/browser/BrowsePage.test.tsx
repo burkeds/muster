@@ -16,6 +16,11 @@ vi.mock('@/hooks/useServerInfo', () => ({
   }),
 }));
 
+const mockUseVerifiedEmpty = vi.fn();
+vi.mock('@/features/node/useVerifiedEmpty', () => ({
+  useVerifiedEmptyContainers: (...args: unknown[]) => mockUseVerifiedEmpty(...args),
+}));
+
 vi.mock('@/features/h5/H5ExploreView', () => ({
   H5ExploreView: ({ segments }: { segments: string[] }) => (
     <div data-testid="h5-view">{segments.join('/')}</div>
@@ -73,6 +78,9 @@ function baseResult(overrides: Record<string, unknown> = {}) {
 describe('BrowsePage', () => {
   beforeEach(() => {
     mockUseNodeMetadata.mockReturnValue({ data: undefined, isLoading: false });
+    // Nothing is verified-empty by default; individual tests override with the
+    // set of confirmed-empty container ids.
+    mockUseVerifiedEmpty.mockReturnValue(new Set());
     // The "hide empty containers" preference is persisted to localStorage; reset
     // it so tests never inherit state toggled by an earlier test.
     localStorage.clear();
@@ -242,12 +250,59 @@ describe('BrowsePage', () => {
 
     expect(screen.getByText('empty')).toBeInTheDocument();
 
+    // 'empty' has count 0 and the live probe confirms it has no children.
+    mockUseVerifiedEmpty.mockReturnValue(new Set(['empty']));
     await user.click(screen.getByLabelText('Hide empty containers'));
 
     expect(screen.queryByText('empty')).not.toBeInTheDocument();
     expect(screen.getByText('sub')).toBeInTheDocument();
     expect(screen.getByText('plot')).toBeInTheDocument();
     expect(screen.getByTestId('status-line-text')).toHaveTextContent('1 empty hidden');
+  });
+
+  it('keeps a stale-count container visible when the server still serves children', async () => {
+    const user = userEvent.setup();
+    // All children report count 0 (under-reported), but none are confirmed empty
+    // by the live probe because they actually have children.
+    mockUseVerifiedEmpty.mockReturnValue(new Set());
+    mockUseNodeSearch.mockReturnValue(
+      baseResult({
+        data: {
+          data: [
+            {
+              id: 'probe',
+              attributes: {
+                ancestors: ['generated'],
+                structure_family: 'container',
+                structure: { count: 0 },
+                metadata: {},
+              },
+              links: {},
+              meta: null,
+            },
+            {
+              id: 'nerve',
+              attributes: {
+                ancestors: ['generated'],
+                structure_family: 'container',
+                structure: { count: 0 },
+                metadata: {},
+              },
+              links: {},
+              meta: null,
+            },
+          ],
+          meta: { count: 2 },
+        },
+      }),
+    );
+    renderAt('/browse/generated');
+
+    await user.click(screen.getByLabelText('Hide empty containers'));
+
+    expect(screen.getByText('probe')).toBeInTheDocument();
+    expect(screen.getByText('nerve')).toBeInTheDocument();
+    expect(screen.getByTestId('status-line-text')).toHaveTextContent('Browse /generated');
   });
 
   it('shows a "no non-empty containers" message when everything is filtered out', async () => {
@@ -274,6 +329,8 @@ describe('BrowsePage', () => {
     );
     renderAt('/browse/generated');
 
+    // 'only-empty' has count 0 and the live probe confirms it has no children.
+    mockUseVerifiedEmpty.mockReturnValue(new Set(['only-empty']));
     await user.click(screen.getByLabelText('Hide empty containers'));
 
     expect(screen.getByText('No non-empty containers')).toBeInTheDocument();
