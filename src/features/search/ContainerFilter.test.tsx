@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { ContainerFilter } from './ContainerFilter';
-import type { SearchOptions } from '@tiled/client-core';
+import type { TiledSearchFilters } from '@blueskyproject/tiled';
 
 const renderFilter = (props: Partial<Parameters<typeof ContainerFilter>[0]> = {}) => {
   const defaults = {
-    filter: undefined as SearchOptions['filter'] | undefined,
+    filter: undefined as TiledSearchFilters | undefined,
     onApply: vi.fn(),
     onClear: vi.fn(),
     ...props,
@@ -40,7 +40,7 @@ describe('ContainerFilter', () => {
     await expand(user);
     await user.type(screen.getByPlaceholderText('search text'), 'Ni');
     await user.click(searchApply());
-    expect(onApply).toHaveBeenCalledWith({ fulltext: [['text', 'Ni']] });
+    expect(onApply).toHaveBeenCalledWith({ fulltext: { text: 'Ni' } });
   });
 
   it('builds an equality filter on a nested (dotted) key', async () => {
@@ -52,10 +52,7 @@ describe('ContainerFilter', () => {
     await user.type(valueInput(0), 'helium');
     await user.click(searchApply());
     expect(onApply).toHaveBeenCalledWith({
-      eq: [
-        ['key', 'element.name'],
-        ['value', '"helium"'],
-      ],
+      eq: { key: 'element.name', value: 'helium' },
     });
   });
 
@@ -70,31 +67,15 @@ describe('ContainerFilter', () => {
     await user.type(valueInput(2), '2');
     await user.click(searchApply());
     expect(onApply).toHaveBeenCalledWith({
-      comparison: [
-        ['key', 'element.atomic_number'],
-        ['operator', 'gt'],
-        ['value', '"2"'],
-      ],
+      comparison: {
+        key: 'element.atomic_number',
+        operator: 'gt',
+        value: '2',
+      },
     });
   });
 
-  it('builds an "in" filter with comma-separated values on a nested key', async () => {
-    const user = userEvent.setup();
-    const onApply = vi.fn();
-    renderFilter({ onApply });
-    await expand(user);
-    await user.type(keyInput(2), 'element.category');
-    await user.type(screen.getByPlaceholderText('a, b, c'), 'metal, gas');
-    await user.click(searchApply());
-    expect(onApply).toHaveBeenCalledWith({
-      in: [
-        ['key', 'element.category'],
-        ['value', '["metal","gas"]'],
-      ],
-    });
-  });
-
-  it('builds a like filter with a pattern', async () => {
+  it('builds a like filter', async () => {
     const user = userEvent.setup();
     const onApply = vi.fn();
     renderFilter({ onApply });
@@ -103,14 +84,11 @@ describe('ContainerFilter', () => {
     await user.type(screen.getByPlaceholderText('pattern'), 'He%');
     await user.click(searchApply());
     expect(onApply).toHaveBeenCalledWith({
-      like: [
-        ['key', 'element.name'],
-        ['pattern', 'He%'],
-      ],
+      like: { key: 'element.name', pattern: 'He%' },
     });
   });
 
-  it('builds a keypresent filter for a nested key (exists=true)', async () => {
+  it('builds a keyPresent filter for a nested key (exists=true)', async () => {
     const user = userEvent.setup();
     const onApply = vi.fn();
     renderFilter({ onApply });
@@ -118,17 +96,14 @@ describe('ContainerFilter', () => {
     await user.type(keyInput(5), 'edges.K');
     await user.click(searchApply());
     expect(onApply).toHaveBeenCalledWith({
-      keypresent: [
-        ['key', 'edges.K'],
-        ['exists', 'true'],
-      ],
+      keyPresent: { key: 'edges.K', exists: true },
     });
   });
 
   it('labels the trigger when a filter is active and clears it', async () => {
     const user = userEvent.setup();
     const onClear = vi.fn();
-    renderFilter({ filter: { eq: [['key', 'sample'], ['value', '"X"']] }, onClear });
+    renderFilter({ filter: { eq: { key: 'sample', value: 'X' } }, onClear });
     expect(screen.getByText('Filtering this container')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Clear/i }));
     expect(onClear).toHaveBeenCalled();

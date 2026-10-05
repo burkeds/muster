@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import type { TiledSearchFilters } from '@blueskyproject/tiled';
 import { useNodeMetadata } from '@/hooks/useNodeMetadata';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { NodeGrid } from '@/components/common/NodeGrid';
@@ -20,14 +21,14 @@ import { MetadataPanel } from '@/features/metadata/MetadataPanel';
 import { ContainerFilter } from '@/features/search/ContainerFilter';
 import { appContainerMetadataKeys } from '@/features/search/metadataKeys';
 import { Download, Info, RefreshCw } from 'lucide-react';
-import type { Resource, NodeAttributes, NodeResponse, SearchOptions } from '@tiled/client-core';
+import type { ListingItem } from '@/lib/tiledTypes';
 
 const PAGE_LIMIT = 60;
 
 /** Metadata marker so the DownloadDialog treats the current node as a container. */
 const CONTAINER_META = {
-  data: { attributes: { structure_family: 'container' } },
-} as unknown as NodeResponse;
+  attributes: { structure_family: 'container' as const },
+};
 
 /** Listing + navigation of container children (GET /search/{path}). */
 export function BrowsePage() {
@@ -37,7 +38,7 @@ export function BrowsePage() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [hideEmpty, setHideEmpty] = usePersistedBoolean('muster:hide-empty', false);
   const [showMetadata, setShowMetadata] = useState(false);
-  const [filter, setFilter] = useState<SearchOptions['filter'] | undefined>(undefined);
+  const [filter, setFilter] = useState<TiledSearchFilters | undefined>(undefined);
 
   const { resources, total, hiddenCount, offset, setOffset, query } = useContainerListing({
     segments,
@@ -59,7 +60,7 @@ export function BrowsePage() {
     childrenFamilies: resources.map((r) => r.attributes?.structure_family),
   });
 
-  const handleSelect = (name: string, resource: Resource<NodeAttributes>) => {
+  const handleSelect = (name: string, resource: ListingItem) => {
     const family = resource.attributes?.structure_family;
     const parent = segments.join('/');
     const childPath = parent ? `${parent}/${name}` : name;
@@ -70,7 +71,7 @@ export function BrowsePage() {
     }
   };
 
-  const isContainer = (r: Resource<NodeAttributes>) =>
+  const isContainer = (r: ListingItem) =>
     (r.attributes?.structure_family ?? '') === 'container';
 
   const pathLabel = segments.length ? ` /${segments.join('/')}` : ' (root)';

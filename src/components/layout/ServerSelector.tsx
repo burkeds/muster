@@ -12,7 +12,13 @@ import {
 import { Check, PlugZap, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Header control to view/switch the connected Tiled server. */
+/**
+ * Header control to view/switch the connected Tiled server.
+ *
+ * Query keys used by data hooks already include the server base URL, so
+ * switching servers does not mix cached responses across servers. Token
+ * isolation is handled separately via `scopeTokens` in the auth layer.
+ */
 export function ServerSelector() {
   const { servers, activeServer, selectServer } = useServers();
   const navigate = useNavigate();

@@ -1,4 +1,4 @@
-import type { PaginationLinks } from '@tiled/client-core';
+import type { PaginationLinks } from '@/lib/tiledTypes';
 
 /**
  * Extract a browse/search path from a segments array.

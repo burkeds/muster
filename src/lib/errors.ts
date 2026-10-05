@@ -1,4 +1,4 @@
-import { TiledError } from '@tiled/client-core';
+import { TiledError } from '@/lib/tiledError';
 
 /** Rich, actionable guidance for a Tiled request failure. */
 export interface HumanizedError {

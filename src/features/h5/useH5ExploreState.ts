@@ -1,4 +1,4 @@
-import type { NodeResponse, StructureFamily } from '@tiled/client-core';
+import type { NodeMetadata, StructureFamily } from '@/lib/tiledTypes';
 import {
   containerHasHdf5Format,
   isH5CompatibleFamilies,
@@ -10,14 +10,14 @@ export interface UseH5ExploreStateParams {
   /** Tiled segments of the container in question. */
   segments: string[];
   /** The container node's own metadata. */
-  metadata: NodeResponse | undefined;
+  metadata: NodeMetadata | undefined;
   /** The server's HDF5 export formats for the container family (About). */
   containerFormats?: string[] | undefined;
   /**
    * Direct children structure families, when the caller already has the listing
    * (e.g. the browse page). When omitted, the hook fetches them.
    */
-  childrenFamilies?: (StructureFamily | undefined)[] | undefined;
+  childrenFamilies?: (StructureFamily | string | undefined)[] | undefined;
 }
 
 /**
@@ -34,7 +34,7 @@ export function useH5ExploreState({
   containerFormats,
   childrenFamilies,
 }: UseH5ExploreStateParams): { available: boolean; compatible: boolean } {
-  const family = metadata?.data?.attributes?.structure_family;
+  const family = metadata?.attributes?.structure_family;
   const available = containerHasHdf5Format(family, containerFormats);
 
   const needsQuery =

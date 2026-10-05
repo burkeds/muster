@@ -1,30 +1,37 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useDeviceCodeLogin } from './useDeviceCodeLogin';
-import { DeviceCodeError, type DeviceCodeResponse } from '@tiled/client-core';
-import type { AboutAuthenticationProvider } from '@tiled/client-core';
+import { DeviceCodeError, type DeviceCodeResponse } from '@/lib/deviceCodeAuth';
+import type { TiledAuthProvider } from '@blueskyproject/tiled';
 
 const startDeviceCodeAuth = vi.fn();
 const pollDeviceCodeToken = vi.fn();
-vi.mock('@tiled/client-core', () => ({
-  startDeviceCodeAuth: (...a: unknown[]) => startDeviceCodeAuth(...a),
-  pollDeviceCodeToken: (...a: unknown[]) => pollDeviceCodeToken(...a),
-  DeviceCodeError: class extends Error {
-    kind: 'pending' | 'expired' | 'denied' | 'error';
-    constructor(kind: 'pending' | 'expired' | 'denied' | 'error', msg: string) {
-      super(msg);
-      this.kind = kind;
-    }
-  },
-}));
-
-const makeClient = () => ({
-  startDeviceCode: (p: AboutAuthenticationProvider) => startDeviceCodeAuth(p),
-  pollDeviceCode: (args: { verificationUri: string; deviceCode: string }) =>
-    pollDeviceCodeToken(args),
+vi.mock('@/lib/deviceCodeAuth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/deviceCodeAuth')>();
+  return {
+    ...actual,
+    startDeviceCodeAuth: (...a: unknown[]) => startDeviceCodeAuth(...a),
+    pollDeviceCodeToken: (...a: unknown[]) => pollDeviceCodeToken(...a),
+    DeviceCodeError: actual.DeviceCodeError,
+  };
 });
 
-const provider = { links: { auth_endpoint: '/authorize' } } as AboutAuthenticationProvider;
+vi.mock('@/config/TiledConfigProvider', () => ({
+  useOptionalTiledConfig: () => null,
+}));
+
+const makeClient = () =>
+  ({
+    getBaseUrl: () => 'http://localhost/api/v1',
+  }) as never;
+
+const provider = {
+  provider: 'oidc',
+  mode: 'external',
+  links: { auth_endpoint: '/authorize' },
+  confirmation_message: '',
+} as TiledAuthProvider;
+
 const device: DeviceCodeResponse = {
   authorization_uri: 'https://keycloak.desy.de/auth',
   verification_uri: '/token',

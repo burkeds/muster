@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { TiledSearchFilters, TiledStructureFamilyFilter } from '@blueskyproject/tiled';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -11,25 +12,22 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
-import type { SearchOptions } from '@tiled/client-core';
 
-const FAMILY_OPTIONS = ['array', 'awkward', 'bytes', 'container', 'ragged', 'sparse', 'table'];
-const COMPARISON_OPS = ['gt', 'lt', 'ge', 'le'];
+const FAMILY_OPTIONS = ['array', 'awkward', 'container', 'sparse', 'table'] as const;
+const COMPARISON_OPS = ['gt', 'lt', 'gte', 'lte'] as const;
 
 /** id shared by the metadata-key datalist so all key inputs autocomplete. */
 const KEYLIST_ID = 'muster-metadata-keys';
 
-function countFilter(f?: SearchOptions['filter']): number {
+function countFilter(f?: TiledSearchFilters): number {
   if (!f) return 0;
-  let n = 0;
-  for (const conds of Object.values(f)) n += conds?.length ?? 1;
-  return n;
+  return Object.keys(f).length;
 }
 
 export interface ContainerFilterProps {
   /** The currently applied filter (owned by the parent/listing). */
-  filter: SearchOptions['filter'] | undefined;
-  onApply: (filter: SearchOptions['filter']) => void;
+  filter: TiledSearchFilters | undefined;
+  onApply: (filter: TiledSearchFilters) => void;
   onClear: () => void;
   /** Nested metadata keys discovered from the container's children (autocomplete). */
   metadataKeys?: string[];
@@ -50,7 +48,7 @@ function KeyDatalist({ keys }: { keys: string[] }) {
  *
  * Tiled search is scoped to a container and supports nested metadata keys via
  * dot-separated paths (e.g. `element.name`, `edges.K.energy_eV`). The form builds
- * a `filter` object and the parent listing re-runs `/search/{segments}?filter[...]`,
+ * a `TiledSearchFilters` object and the parent listing re-runs search with it,
  * returning a filtered container (only matching children).
  */
 export function ContainerFilter({
@@ -72,7 +70,7 @@ export function ContainerFilter({
   const [likeKey, setLikeKey] = useState('');
   const [likePattern, setLikePattern] = useState('');
   const [cmpKey, setCmpKey] = useState('');
-  const [cmpOp, setCmpOp] = useState('gt');
+  const [cmpOp, setCmpOp] = useState<(typeof COMPARISON_OPS)[number]>('gt');
   const [cmpValue, setCmpValue] = useState('');
   const [kpKey, setKpKey] = useState('');
   const [kpExists, setKpExists] = useState(true);
@@ -80,48 +78,36 @@ export function ContainerFilter({
 
   const activeCount = countFilter(filter);
 
-  const buildFilters = (): SearchOptions['filter'] => {
-    const f: NonNullable<SearchOptions['filter']> = {};
-    if (fulltext.trim()) f.fulltext = [['text', fulltext.trim()]];
-    if (eqKey.trim() && eqValue !== '')
-      f.eq = [
-        ['key', eqKey.trim()],
-        ['value', JSON.stringify(eqValue)],
-      ];
+  const buildFilters = (): TiledSearchFilters => {
+    const f: TiledSearchFilters = {};
+    if (fulltext.trim()) f.fulltext = { text: fulltext.trim() };
+    if (eqKey.trim() && eqValue !== '') f.eq = { key: eqKey.trim(), value: eqValue };
     if (containsKey.trim() && containsValue !== '')
-      f.contains = [
-        ['key', containsKey.trim()],
-        ['value', JSON.stringify(containsValue)],
-      ];
+      f.contains = { key: containsKey.trim(), value: containsValue };
     if (inKey.trim()) {
       const list = inValue
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
       if (list.length) {
-        f[inMode] = [
-          ['key', inKey.trim()],
-          ['value', JSON.stringify(list)],
-        ];
+        if (inMode === 'in') f.in = { key: inKey.trim(), value: list };
+        else f.notin = { key: inKey.trim(), value: list };
       }
     }
     if (likeKey.trim() && likePattern.trim())
-      f.like = [
-        ['key', likeKey.trim()],
-        ['pattern', likePattern.trim()],
-      ];
+      f.like = { key: likeKey.trim(), pattern: likePattern.trim() };
     if (cmpKey.trim() && cmpValue !== '')
-      f.comparison = [
-        ['key', cmpKey.trim()],
-        ['operator', cmpOp],
-        ['value', JSON.stringify(cmpValue)],
-      ];
-    if (kpKey.trim())
-      f.keypresent = [
-        ['key', kpKey.trim()],
-        ['exists', String(kpExists)],
-      ];
-    if (family !== 'any') f.structure_family = [['value', family]];
+      f.comparison = {
+        key: cmpKey.trim(),
+        operator: cmpOp,
+        value: cmpValue,
+      };
+    if (kpKey.trim()) f.keyPresent = { key: kpKey.trim(), exists: kpExists };
+    if (family !== 'any') {
+      f.structureFamily = {
+        value: family as TiledStructureFamilyFilter['value'],
+      };
+    }
     return f;
   };
 
@@ -197,12 +183,7 @@ export function ContainerFilter({
           </Field>
 
           <Field label="Metadata equal" hint="Key may be nested: element.name">
-            <KeyInput
-              list={KEYLIST_ID}
-              placeholder="key"
-              value={eqKey}
-              onChange={setEqKey}
-            />
+            <KeyInput list={KEYLIST_ID} placeholder="key" value={eqKey} onChange={setEqKey} />
             <Input
               placeholder="value"
               className="w-40"
@@ -227,22 +208,14 @@ export function ContainerFilter({
           </Field>
 
           <Field label={`${inMode === 'in' ? 'In' : 'Not in'}`} hint="Comma-separated values">
-            <KeyInput
-              list={KEYLIST_ID}
-              placeholder="key"
-              value={inKey}
-              onChange={setInKey}
-            />
+            <KeyInput list={KEYLIST_ID} placeholder="key" value={inKey} onChange={setInKey} />
             <Input
               placeholder="a, b, c"
               className="w-40"
               value={inValue}
               onChange={(e) => setInValue(e.target.value)}
             />
-            <Select
-              value={inMode}
-              onValueChange={(v) => setInMode(v as 'in' | 'notin')}
-            >
+            <Select value={inMode} onValueChange={(v) => setInMode(v as 'in' | 'notin')}>
               <SelectTrigger className="w-24" aria-label="Membership operator">
                 <SelectValue />
               </SelectTrigger>
@@ -254,12 +227,7 @@ export function ContainerFilter({
           </Field>
 
           <Field label="Like (SQL wildcard)" hint="Pattern e.g. Ni% or %image">
-            <KeyInput
-              list={KEYLIST_ID}
-              placeholder="key"
-              value={likeKey}
-              onChange={setLikeKey}
-            />
+            <KeyInput list={KEYLIST_ID} placeholder="key" value={likeKey} onChange={setLikeKey} />
             <Input
               placeholder="pattern"
               className="w-40"
@@ -269,13 +237,11 @@ export function ContainerFilter({
           </Field>
 
           <Field label="Compare (numeric)" hint="Key may be nested: element.atomic_number">
-            <KeyInput
-              list={KEYLIST_ID}
-              placeholder="key"
-              value={cmpKey}
-              onChange={setCmpKey}
-            />
-            <Select value={cmpOp} onValueChange={setCmpOp}>
+            <KeyInput list={KEYLIST_ID} placeholder="key" value={cmpKey} onChange={setCmpKey} />
+            <Select
+              value={cmpOp}
+              onValueChange={(v) => setCmpOp(v as (typeof COMPARISON_OPS)[number])}
+            >
               <SelectTrigger className="w-24" aria-label="Comparison operator">
                 <SelectValue />
               </SelectTrigger>
@@ -296,17 +262,9 @@ export function ContainerFilter({
           </Field>
 
           <Field label="Key exists" hint="Matches nodes that have this (nested) key">
-            <KeyInput
-              list={KEYLIST_ID}
-              placeholder="key"
-              value={kpKey}
-              onChange={setKpKey}
-            />
+            <KeyInput list={KEYLIST_ID} placeholder="key" value={kpKey} onChange={setKpKey} />
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Checkbox
-                checked={kpExists}
-                onCheckedChange={(v) => setKpExists(v === true)}
-              />
+              <Checkbox checked={kpExists} onCheckedChange={(v) => setKpExists(v === true)} />
               exists
             </label>
           </Field>

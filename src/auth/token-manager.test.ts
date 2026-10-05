@@ -5,6 +5,7 @@ import {
   tokenManager,
   scopeTokens,
   scopeForServer,
+  syncSdkTokenStore,
 } from './token-manager';
 
 function makeToken(payload: Record<string, unknown>): string {
@@ -33,6 +34,33 @@ describe('scopeTokens', () => {
   });
 });
 
+describe('syncSdkTokenStore', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('mirrors active tokens into the SDK global keys', () => {
+    syncSdkTokenStore('access', 'refresh');
+    expect(localStorage.getItem('tiledAccessToken')).toBe('access');
+    expect(localStorage.getItem('tiledRefreshToken')).toBe('refresh');
+  });
+
+  it('clears SDK global keys when tokens are null', () => {
+    syncSdkTokenStore('access', 'refresh');
+    syncSdkTokenStore(null, null);
+    expect(localStorage.getItem('tiledAccessToken')).toBeNull();
+    expect(localStorage.getItem('tiledRefreshToken')).toBeNull();
+  });
+
+  it('saveTokens/clear also keep the SDK store in sync', () => {
+    scopeTokens('default');
+    tokenManager.saveTokens('a', 'r');
+    expect(localStorage.getItem('tiledAccessToken')).toBe('a');
+    expect(localStorage.getItem('tiledRefreshToken')).toBe('r');
+    tokenManager.clear();
+    expect(localStorage.getItem('tiledAccessToken')).toBeNull();
+    expect(localStorage.getItem('tiledRefreshToken')).toBeNull();
+  });
+});
+
 describe('parseJwtPayload', () => {
   it('decodes the payload of a JWT', () => {
     const token = makeToken({ sub: 'alice', exp: 9999999999 });
@@ -53,7 +81,11 @@ describe('isTokenExpired', () => {
 });
 
 describe('tokenManager', () => {
-  beforeEach(() => tokenManager.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    scopeTokens('default');
+    tokenManager.clear();
+  });
 
   it('round-trips tokens and identity via localStorage', () => {
     tokenManager.saveTokens('access', 'refresh');

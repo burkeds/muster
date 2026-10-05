@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { NodeResponse, SearchOptions } from '@tiled/client-core';
+import type { TiledSearchFilters } from '@blueskyproject/tiled';
+import type { NodeMetadata } from '@/lib/tiledTypes';
 import { NodeGrid } from '@/components/common/NodeGrid';
 import { Pagination } from '@/components/common/Pagination';
 import { StatusLine } from '@/components/common/StatusLine';
@@ -16,14 +17,14 @@ const PAGE_LIMIT = 60;
 
 export interface ContainerViewProps {
   segments: string[];
-  metadata: NodeResponse;
+  metadata: NodeMetadata;
 }
 
 /** List the children of a container node (reuses the browse grid). */
 export function ContainerView({ segments, metadata }: ContainerViewProps) {
   const navigate = useNavigate();
   const [hideEmpty, setHideEmpty] = usePersistedBoolean('muster:hide-empty', false);
-  const [filter, setFilter] = useState<SearchOptions['filter'] | undefined>(undefined);
+  const [filter, setFilter] = useState<TiledSearchFilters | undefined>(undefined);
 
   const { resources, total, hiddenCount, offset, setOffset, query } = useContainerListing({
     segments,
@@ -33,7 +34,7 @@ export function ContainerView({ segments, metadata }: ContainerViewProps) {
 
   // Fall back to the container's advertised child count before the listing loads.
   const listedCount =
-    (metadata.data?.attributes?.structure as { count?: number } | undefined)?.count ?? 0;
+    (metadata.attributes?.structure as { count?: number } | undefined)?.count ?? 0;
   const metadataKeys = appContainerMetadataKeys(resources);
 
   const handleSelect = (name: string, r: (typeof resources)[number]) => {

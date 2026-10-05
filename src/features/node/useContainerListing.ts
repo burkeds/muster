@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNodeSearch } from "@/hooks/useNodeSearch";
+import type { TiledSearchFilters } from "@blueskyproject/tiled";
 import { useOptionalTiledClient } from "@/config/useTiledClient";
-import type {
-  Resource,
-  NodeAttributes,
-  SearchOptions,
-} from "@tiled/client-core";
+import type { ListingItem } from "@/lib/tiledTypes";
 import { isContainerEmpty } from "./utils";
 import { useVerifiedEmptyContainers } from "./useVerifiedEmpty";
 
@@ -29,7 +26,7 @@ export function useContainerListing(params: {
   pageSize?: number;
   hideEmpty?: boolean;
   /** Tiled search filter scoped to this container (AND-combined). */
-  filter?: SearchOptions["filter"];
+  filter?: TiledSearchFilters;
 }) {
   const { segments, pageSize = 60, hideEmpty = false, filter } = params;
   const client = useOptionalTiledClient();
@@ -91,4 +88,4 @@ export function useContainerListing(params: {
 }
 
 export type ContainerListing = ReturnType<typeof useContainerListing>;
-export type ListingResource = Resource<NodeAttributes>;
+export type ListingResource = ListingItem;

@@ -1,19 +1,28 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginWithPassword } from '@tiled/client-core';
-import { tokenManager, isTokenExpired, scopeTokens, scopeForServer } from './token-manager';
+import { TiledApiClient, type TiledAuthProvider } from '@blueskyproject/tiled';
+// TiledApiClient has no public refresh method — only a private doTokenRefresh
+// used by its 401 interceptor. refreshSession is a local pure function (ported
+// from the now-archived @tiled/client-core) that does not depend on TiledApiClient.
+import { refreshSession } from '@/lib/refreshSession';
+import {
+  tokenManager,
+  isTokenExpired,
+  scopeTokens,
+  scopeForServer,
+  syncSdkTokenStore,
+} from './token-manager';
 import { useOptionalTiledClient } from '@/config/useTiledClient';
 import { useServersOptional } from '@/config/ServerProvider';
-import type { UserIdentity } from '@tiled/client-core';
-import type { AuthState } from './types';
+import type { AuthState, UserIdentity } from './types';
 
 const AuthContext = createContext<AuthState | null>(null);
 
@@ -21,6 +30,14 @@ export interface AuthProviderProps {
   children: ReactNode;
   /** Called after a successful login (e.g. to navigate). */
   onAuthenticated?: () => void;
+}
+
+/**
+ * Push the current access token onto the active TiledApiClient.
+ * TiledApiClient has no getBearerToken callback — tokens must be set imperatively.
+ */
+function applyBearerToken(client: TiledApiClient | null, accessToken: string | null) {
+  client?.setBearerToken(accessToken);
 }
 
 export function AuthProvider({ children, onAuthenticated }: AuthProviderProps) {
@@ -40,36 +57,51 @@ export function AuthProvider({ children, onAuthenticated }: AuthProviderProps) {
     let cancelled = false;
     async function init() {
       if (!hasServer || !client) {
+        applyBearerToken(client, null);
+        syncSdkTokenStore(null, null);
         setAuthRequired(false);
         setLoggedOut();
         if (!cancelled) setInitialized(true);
         return;
       }
-      scopeTokens(scopeForServer(client.baseUrl));
+      // Scope the local token store to this server (hostname:port).
+      scopeTokens(scopeForServer(client.getBaseUrl()));
       try {
-        const info = await client.about();
+        const info = await client.getServerInfo();
         if (cancelled) return;
-        setAuthRequired(
-          info.authentication?.required ?? (info.authentication?.providers?.length ?? 0) > 0,
-        );
-        setProviders(info.authentication?.providers ?? []);
+        const auth = info?.authentication;
+        setAuthRequired(auth?.required ?? (auth?.providers?.length ?? 0) > 0);
+        setProviders(auth?.providers ?? []);
 
         const { accessToken, refreshToken, identity: saved } = tokenManager.hydrate();
         setIdentity(saved);
         if (accessToken && !isTokenExpired(accessToken)) {
+          applyBearerToken(client, accessToken);
+          // Keep SDK global keys in sync so the private 401 interceptor can refresh.
+          syncSdkTokenStore(accessToken, refreshToken);
           setIsAuthenticated(true);
         } else if (refreshToken) {
           try {
-            const tokens = await client.refresh(refreshToken);
+            // No public refresh on TiledApiClient — use standalone pure function.
+            const tokens = await refreshSession({
+              base: client.getBaseUrl(),
+              refreshToken,
+            });
             tokenManager.saveTokens(tokens.access_token, tokens.refresh_token);
+            applyBearerToken(client, tokens.access_token);
             setIsAuthenticated(true);
           } catch {
             tokenManager.clear();
+            applyBearerToken(client, null);
           }
+        } else {
+          applyBearerToken(client, null);
+          syncSdkTokenStore(null, null);
         }
       } catch {
         if (cancelled) return;
         setAuthRequired(false);
+        applyBearerToken(client, null);
         setLoggedOut();
       } finally {
         if (!cancelled) setInitialized(true);
@@ -86,8 +118,8 @@ export function AuthProvider({ children, onAuthenticated }: AuthProviderProps) {
     setIdentity(null);
   }
 
-  const handleLogin = useMemo(
-    () => async (payload: unknown) => {
+  const handleLogin = useCallback(
+    async (payload: unknown) => {
       setLoginError(null);
       const tokens = payload as {
         access_token: string;
@@ -96,6 +128,7 @@ export function AuthProvider({ children, onAuthenticated }: AuthProviderProps) {
       };
       if (tokens.access_token && tokens.refresh_token) {
         tokenManager.saveTokens(tokens.access_token, tokens.refresh_token);
+        applyBearerToken(client, tokens.access_token);
         setIsAuthenticated(true);
       }
       if (tokens.identity) {
@@ -104,16 +137,14 @@ export function AuthProvider({ children, onAuthenticated }: AuthProviderProps) {
       }
       onAuthenticated?.();
     },
-    [onAuthenticated],
+    [onAuthenticated, client],
   );
 
-  const handleLogout = useMemo(
-    () => () => {
-      tokenManager.clear();
-      setLoggedOut();
-    },
-    [],
-  );
+  const handleLogout = useCallback(() => {
+    tokenManager.clear();
+    applyBearerToken(client, null);
+    setLoggedOut();
+  }, [client]);
 
   // Complete login initiated in a new-tab OIDC flow: the popup posted the
   // tokens back to this (opener) tab before closing.
@@ -159,23 +190,32 @@ export function AuthProvider({ children, onAuthenticated }: AuthProviderProps) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/** Convenience: perform an internal-provider password login. */
+/**
+ * Convenience: perform an internal-provider password login.
+ * Signature preserved for out-of-scope callers — constructs a short-lived
+ * TiledApiClient bound to `base` and uses loginWithUsernamePassword.
+ */
 export async function authLoginPassword(
   base: string,
   providerEndpoint: string,
   username: string,
   password: string,
 ) {
-  return loginWithPassword({
-    base,
-    provider: {
-      provider: 'internal',
-      mode: 'internal',
-      links: { auth_endpoint: providerEndpoint },
-    },
-    username,
-    password,
-  });
+  const client = new TiledApiClient({ baseUrl: base });
+  const provider: TiledAuthProvider = {
+    provider: 'internal',
+    mode: 'internal',
+    links: { auth_endpoint: providerEndpoint },
+    confirmation_message: '',
+  };
+  const tokens = await client.loginWithUsernamePassword(username, password, base, provider);
+  if (!tokens) {
+    throw new Error('Login failed');
+  }
+  // loginWithUsernamePassword already wrote SDK global keys + setBearerToken on
+  // this ephemeral client; callers still need to pass tokens through onLogin so
+  // the live context client and scoped tokenManager pick them up.
+  return tokens;
 }
 
 export function useAuth(): AuthState {

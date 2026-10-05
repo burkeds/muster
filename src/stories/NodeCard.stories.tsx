@@ -1,30 +1,42 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { NodeCard } from '@/components/common/NodeCard';
-import type { Resource, NodeAttributes } from '@tiled/client-core';
+import type { ListingItem } from '@/lib/tiledTypes';
 
-const container: Resource<NodeAttributes> = {
+const container = {
   id: '1',
   attributes: {
     ancestors: ['generated'],
     structure_family: 'container',
-    structure: { count: 4 },
+    structure: { contents: null, count: 4 },
     metadata: { sample: 'Ni foil' },
+    specs: [],
+    sorting: null,
+    data_sources: null,
   },
-  links: {},
+  links: { self: '' },
   meta: null,
-};
+} as ListingItem;
 
-const arrayRes: Resource<NodeAttributes> = {
+const arrayRes = {
   id: '2',
   attributes: {
     ancestors: ['generated', 'arr'],
     structure_family: 'array',
-    structure: { shape: [100, 100] },
+    structure: {
+      shape: [100, 100],
+      chunks: [],
+      dims: null,
+      resizable: false,
+      data_type: { endianness: 'little', kind: 'f', itemsize: 8, dt_units: null },
+    },
     metadata: {},
+    specs: [],
+    sorting: null,
+    data_sources: null,
   },
-  links: {},
+  links: { self: '' },
   meta: null,
-};
+} as ListingItem;
 
 const meta: Meta<typeof NodeCard> = {
   title: 'NodeCard',

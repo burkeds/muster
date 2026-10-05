@@ -1,35 +1,73 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import type { TiledSearchConfig, TiledSearchFilters, TiledSearchOptions } from '@blueskyproject/tiled';
 import { useOptionalTiledClient } from '@/config/useTiledClient';
-import type { SearchOptions } from '@tiled/client-core';
 
-export interface UseNodeSearchParams extends SearchOptions {
+export type { TiledSearchFilters, TiledSearchOptions };
+
+export interface UseNodeSearchParams extends TiledSearchOptions {
   segments: string[];
-  /** When set, follow this server-provided cursor URL instead of building one. */
+  /** Search filters (AND-combined). */
+  filter?: TiledSearchFilters;
+  /**
+   * @deprecated Cursor-URL follow-through is not supported by TiledApiClient.
+   * Callers should pass pageOffset/pageLimit instead. Kept for API compatibility;
+   * ignored when set.
+   */
   cursorUrl?: string;
   enabled?: boolean;
 }
 
 /**
- * React-query hook for GET /search/{segments}.
+ * React-query hook for GET /search/{segments} via TiledApiClient.getSearch.
  * Query key namespaced ['tiled','search',base,path,opts].
  */
 export function useNodeSearch(params: UseNodeSearchParams) {
   const client = useOptionalTiledClient();
-  const { cursorUrl, segments, enabled = true, ...options } = params;
+  const {
+    cursorUrl: _cursorUrl,
+    segments,
+    enabled = true,
+    filter,
+    fields,
+    selectMetadata,
+    pageOffset,
+    pageLimit,
+    sort,
+    omitLinks,
+    includeDataSources,
+  } = params;
+
+  const searchOptions: TiledSearchOptions = {
+    fields,
+    selectMetadata,
+    pageOffset,
+    pageLimit,
+    sort,
+    omitLinks,
+    includeDataSources,
+  };
 
   const key = [
     'tiled',
     'search',
-    client?.baseUrl,
+    client?.getBaseUrl(),
     segments.join('/'),
-    options.pageOffset ?? 0,
-    options.pageLimit ?? 100,
-    options.filter ?? {},
+    pageOffset ?? 0,
+    pageLimit ?? 100,
+    filter ?? {},
+    fields,
   ];
 
   return useQuery({
     queryKey: key,
-    queryFn: () => (cursorUrl ? client!.searchByUrl(cursorUrl) : client!.search(segments, options)),
+    queryFn: () => {
+      const config: TiledSearchConfig = {
+        searchFilters: filter,
+        searchOptions,
+      };
+      // pathMode absolute: segments are full paths from the catalog root.
+      return client!.getSearch(segments.join('/'), config, { pathMode: 'absolute' });
+    },
     enabled: enabled && !!client,
     placeholderData: keepPreviousData,
   });

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import type { Resource, NodeAttributes, TiledClient } from "@tiled/client-core";
+import type { TiledApiClient } from "@blueskyproject/tiled";
+import type { ListingItem } from "@/lib/tiledTypes";
 
 export interface VerifiedEmptyParams {
   /** Framework-agnostic Tiled client for the active server. */
-  client: TiledClient | null;
+  client: TiledApiClient | null;
   /** Path segments of the container currently being browsed. */
   segments: string[];
   /** Candidate container children (cached structure.count === 0) to verify. */
-  candidates: Resource<NodeAttributes>[];
+  candidates: ListingItem[];
   /** Set false to skip probing entirely (e.g. hideEmpty off). */
   enabled: boolean;
   /** Max concurrent probes. */
@@ -66,10 +67,17 @@ export function useVerifiedEmptyContainers({
         const res = current[idx];
         if (!res.id) continue;
         try {
-          const probe = await client.search([...currentSegments, res.id], {
-            pageLimit: 1,
-            fields: ["structure_family"],
-          });
+          const probePath = [...currentSegments, res.id].join("/");
+          const probe = await client.getSearch(
+            probePath,
+            {
+              searchOptions: {
+                pageLimit: 1,
+                fields: ["structure_family"],
+              },
+            },
+            { pathMode: "absolute" },
+          );
           if (!cancelledRef.cancelled && probe.data.length === 0) {
             confirmedIds.add(res.id);
           }

@@ -19,23 +19,22 @@ vi.mock('@/hooks/useTableData', () => ({
 }));
 
 import { TableView } from './TableView';
-import type { NodeResponse } from '@tiled/client-core';
+import type { NodeMetadata } from '@/lib/tiledTypes';
 
 const metadata = {
-  data: {
-    id: 't',
-    attributes: {
-      ancestors: ['short_table'],
-      structure_family: 'table',
-      structure: { columns: ['a', 'b'], npartitions: 2 },
-    },
-    links: {},
-    meta: null,
+  id: 't',
+  attributes: {
+    ancestors: ['short_table'],
+    structure_family: 'table',
+    specs: [],
+    metadata: {},
+    structure: { columns: ['a', 'b'], npartitions: 2, arrow_schema: '', resizable: false },
+    sorting: null,
+    data_sources: null,
   },
-  error: null,
-  links: null,
-  meta: {},
-} as NodeResponse;
+  links: { self: '' },
+  meta: null,
+} as NodeMetadata;
 
 beforeEach(() => {
   mockUseTableData.mockReset();

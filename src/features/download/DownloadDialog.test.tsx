@@ -8,28 +8,32 @@ vi.mock('@/hooks/useServerInfo', () => ({
   }),
 }));
 
+const axiosGet = vi.fn();
+vi.mock('@/config/useTiledClient', () => ({
+  useOptionalTiledClient: () => ({
+    getBaseUrl: () => 'http://localhost:8000/api/v1',
+    getAxiosClient: () => ({ get: axiosGet }),
+  }),
+}));
+
 import { DownloadDialog } from './DownloadDialog';
-import { TiledConfigProvider } from '@/config/TiledConfigProvider';
-import type { NodeResponse } from '@tiled/client-core';
 
 const containerMeta = {
-  data: { attributes: { structure_family: 'container' } },
-} as unknown as NodeResponse;
+  attributes: { structure_family: 'container' as const },
+};
 
 afterEach(() => {
-  vi.restoreAllMocks();
+  axiosGet.mockReset();
 });
 
 const renderOpen = () =>
   render(
-    <TiledConfigProvider config={{ tiledApiUrl: 'http://localhost:8000/api/v1' }}>
-      <DownloadDialog
-        open
-        onOpenChange={vi.fn()}
-        segments={['examples']}
-        metadata={containerMeta}
-      />
-    </TiledConfigProvider>,
+    <DownloadDialog
+      open
+      onOpenChange={vi.fn()}
+      segments={['examples']}
+      metadata={containerMeta}
+    />,
   );
 
 describe('DownloadDialog (container)', () => {
@@ -40,13 +44,15 @@ describe('DownloadDialog (container)', () => {
 
   it('surfaces the server detail when a format cannot represent the container', async () => {
     const user = userEvent.setup();
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 406,
-      json: async () => ({
-        detail: 'Metadata contains types or structure that does not fit into HDF5.',
-      }),
-    } as Response);
+    const blob = new Blob(
+      [JSON.stringify({ detail: 'Metadata contains types or structure that does not fit into HDF5.' })],
+      { type: 'application/json' },
+    );
+    axiosGet.mockRejectedValue({
+      response: { status: 406, data: blob },
+      message: 'Request failed',
+    });
+
     renderOpen();
 
     await user.click(screen.getByRole('button', { name: /Download/ }));

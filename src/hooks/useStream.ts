@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import type { EnvelopeFormat, StreamEnvelope, StreamStatus } from '@tiled/client-core';
+import type { EnvelopeFormat, StreamEnvelope, StreamStatus } from '@/lib/streamUrl';
+import { streamUrl } from '@/lib/streamUrl';
 import { useOptionalTiledClient } from '@/config/useTiledClient';
+
+export type { EnvelopeFormat, StreamEnvelope, StreamStatus };
 
 export interface UseStreamParams {
   segments: string[];
@@ -23,6 +26,7 @@ export interface UseStreamResult {
 /**
  * Connect to GET /stream/single/{segments} via WebSocket and collect live
  * envelopes. Handles reconnect on demand. API key auth is passed via ?api_key=.
+ * (TiledApiClient has no WebSocket streaming support.)
  */
 export function useStream(params: UseStreamParams): UseStreamResult {
   const client = useOptionalTiledClient();
@@ -40,7 +44,12 @@ export function useStream(params: UseStreamParams): UseStreamResult {
 
   useEffect(() => {
     if (!enabled || !segments.length || !client) return;
-    const ws = new WebSocket(client.streamUrl(segments, { envelopeFormat, start }));
+    const url = streamUrl(client.getBaseUrl(), segments, {
+      envelopeFormat,
+      start,
+      apiKey: client.getApiKey() ?? undefined,
+    });
+    const ws = new WebSocket(url);
     wsRef.current = ws;
     setStatus('connecting');
     setError(null);

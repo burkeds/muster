@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { NodeResponse } from '@tiled/client-core';
+import type { NodeMetadata } from '@/lib/tiledTypes';
 import { useServerInfo } from '@/hooks/useServerInfo';
-import { formatsForFamily } from '@tiled/client-core';
+import { formatsForFamily, makeDownloadUrl } from '@/lib/tiledDownload';
 import { useOptionalTiledClient } from '@/config/useTiledClient';
 import {
   Dialog,
@@ -26,7 +26,7 @@ export interface DownloadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   segments: string[];
-  metadata?: NodeResponse;
+  metadata?: NodeMetadata | { attributes?: { structure_family?: string } };
 }
 
 /**
@@ -41,12 +41,46 @@ function initialFormat(formats: string[], family: string): string {
   return formats[0] ?? 'application/json';
 }
 
+function familyOf(metadata: DownloadDialogProps['metadata']): string {
+  // Support both bare NodeMetadata and thin stubs used by BrowsePage.
+  const attrs =
+    metadata && 'attributes' in metadata
+      ? metadata.attributes
+      : (metadata as { attributes?: { structure_family?: string } } | undefined)?.attributes;
+  return attrs?.structure_family ?? 'array';
+}
+
+async function detailFromError(err: unknown): Promise<string> {
+  // Avoid hard dependency on axios types — inspect duck-typed response shape.
+  const ax = err as {
+    response?: { status?: number; data?: unknown };
+    message?: string;
+  };
+  if (ax?.response) {
+    let detail = `Download failed (${ax.response.status ?? 'network'})`;
+    const data = ax.response.data;
+    if (typeof Blob !== 'undefined' && data instanceof Blob) {
+      try {
+        const body = JSON.parse(await data.text()) as { detail?: string };
+        if (body?.detail) detail = String(body.detail);
+      } catch {
+        /* keep generic */
+      }
+    } else if (data && typeof data === 'object' && 'detail' in data) {
+      detail = String((data as { detail?: string }).detail);
+    }
+    return detail;
+  }
+  if (err instanceof Error) return err.message;
+  return 'Download failed';
+}
+
 /** Build a per-family download link using server-advertised formats. */
 export function DownloadDialog({ open, onOpenChange, segments, metadata }: DownloadDialogProps) {
   const client = useOptionalTiledClient();
   const server = useServerInfo();
-  const family = metadata?.data?.attributes?.structure_family ?? 'array';
-  const formats = formatsForFamily(server.data, family);
+  const family = familyOf(metadata);
+  const formats = formatsForFamily(server.data ?? undefined, family);
   const [format, setFormat] = useState<string>(() => initialFormat(formats, family));
   const [slice, setSlice] = useState('');
   const [filename, setFilename] = useState('');
@@ -56,33 +90,24 @@ export function DownloadDialog({ open, onOpenChange, segments, metadata }: Downl
   if (slice.trim()) extra.slice = slice.trim();
   if (filename.trim()) extra.filename = filename.trim();
 
+  // Base is '' (not client.getBaseUrl()): the axios instance returned by
+  // getAxiosClient() already has baseURL set to the (possibly proxied) base,
+  // so embedding it again here would double it up for proxied/relative bases.
   const desc = client
-    ? client.downloadUrl(family, segments, format, extra)
+    ? makeDownloadUrl('', family, segments, format, extra)
     : { url: '', filename: 'download' };
 
   const download = () => {
     if (!client) return;
     setError(null);
-    fetch(desc.url, {
-      headers: {
-        Accept: format,
-        ...client.authHeaders(),
-      },
-    })
-      .then(async (r) => {
-        if (!r.ok) {
-          let detail = `Download failed (${r.status})`;
-          try {
-            const body = (await r.json()) as { detail?: string };
-            if (body?.detail) detail = String(body.detail);
-          } catch {
-            /* keep generic message */
-          }
-          throw new Error(detail);
-        }
-        return r.blob();
+    void client
+      .getAxiosClient()
+      .get(desc.url, {
+        responseType: 'blob',
+        headers: { Accept: format },
       })
-      .then((blob) => {
+      .then((r: { data: Blob }) => {
+        const blob = r.data;
         const href = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = href;
@@ -90,8 +115,8 @@ export function DownloadDialog({ open, onOpenChange, segments, metadata }: Downl
         a.click();
         URL.revokeObjectURL(href);
       })
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : String(err));
+      .catch(async (err: unknown) => {
+        setError(await detailFromError(err));
       });
   };
 
@@ -141,7 +166,7 @@ export function DownloadDialog({ open, onOpenChange, segments, metadata }: Downl
           ) : null}
           {family === 'container' ? (
             <p className="text-xs text-muted-foreground">
-              Note: container export to HDF5 only works when the tree's metadata fits HDF5; JSON is
+              Note: container export to HDF5 only works when the tree&apos;s metadata fits HDF5; JSON is
               the broadly-supported option.
             </p>
           ) : null}

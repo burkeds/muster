@@ -1,4 +1,4 @@
-import type { UserIdentity } from '@tiled/client-core';
+import type { UserIdentity } from './types';
 
 /**
  * Build the URL the browser should navigate (or open in a new tab) to start an

@@ -1,6 +1,0 @@
-[submodule "tiled-client-core"]
-	path = tiled-client-core
-	url = /home/burkedev/projects/tiled-client/tiled-client-core
-[submodule "tiled-client-h5web"]
-	path = tiled-client-h5web
-	url = /home/burkedev/projects/tiled-client/tiled-client-h5web

@@ -1,4 +1,4 @@
-import { toRelative } from '@tiled/client-core';
+import { toRelative } from '@/lib/toRelative';
 
 /**
  * Proxy-aware URL resolution.

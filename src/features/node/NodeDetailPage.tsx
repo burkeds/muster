@@ -46,7 +46,7 @@ export function NodeDetailPage() {
   }
 
   const metadata = query.data;
-  const family = metadata?.data?.attributes?.structure_family;
+  const family = metadata?.attributes?.structure_family;
 
   return (
     <div className="flex flex-col gap-3">

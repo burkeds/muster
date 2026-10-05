@@ -31,6 +31,19 @@ export default {
         DEFAULT: '0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)',
         md: '0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04)',
         lg: '0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04)',
+        // Ported from Finch: used by scroll-shadow / docked-panel components.
+        right: '4px 0 6px -1px rgba(0, 0, 0, 0.1), 6px 0 10px -1px rgba(0, 0, 0, 0.1)',
+      },
+      keyframes: {
+        // Ported from Finch: brief highlight flash for live-updated values.
+        flash: {
+          '0%, 100%': { backgroundColor: 'transparent' },
+          '50%': { backgroundColor: '#fef08a' },
+        },
+      },
+      animation: {
+        flash1: 'flash 0.5s ease-in-out',
+        flash2: 'flash 0.5s ease-in-out',
       },
       colors: {
         border: 'hsl(var(--border))',

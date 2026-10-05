@@ -1,8 +1,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { TiledApiClient } from '@blueskyproject/tiled';
 import { cleanConfig, DEFAULT_TILED_BASE, type TiledConfig } from './TiledConfig';
 import { resolveEffectiveBase, rewriteLink, DEFAULT_PROXY_MOUNT } from './proxy';
-import { TiledClient } from '@tiled/client-core';
-import { tokenManager } from '@/auth/token-manager';
 
 export interface TiledConfigValue extends TiledConfig {
   /** Effective base used for requests (possibly proxied). */
@@ -13,8 +12,11 @@ export interface TiledConfigValue extends TiledConfig {
   proxyMount: string;
   /** Rewrite a server-reported absolute link to the client's path scheme. */
   linkRewrite: (url: string) => string;
-  /** Framework-agnostic Tiled client bound to this configured server. */
-  client: TiledClient;
+  /**
+   * Per-active-server Tiled API client (`TiledApiClient` from `@blueskyproject/tiled`).
+   * Re-created whenever the active server/config changes so multi-server state stays isolated.
+   */
+  client: TiledApiClient;
 }
 
 const TiledConfigContext = createContext<TiledConfigValue | null>(null);
@@ -36,11 +38,12 @@ export function TiledConfigProvider({ config, children }: TiledConfigProviderPro
       proxyEnabled,
     });
     const linkRewrite = (url: string) => rewriteLink(url, effective, proxyMount);
-    const client = new TiledClient({
+    // Explicit per-server instance — never the package's global default client.
+    // Note: TiledApiClient has no linkRewrite/getBearerToken constructor options;
+    // bearer tokens are pushed imperatively via setBearerToken (see AuthProvider).
+    const client = new TiledApiClient({
       baseUrl: effective,
-      apiKey: cleaned.tiledApiKey,
-      getBearerToken: () => tokenManager.getAccessToken(),
-      linkRewrite,
+      apiKey: cleaned.tiledApiKey ?? null,
     });
     return {
       ...cleaned,

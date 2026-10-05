@@ -1,28 +1,37 @@
 import { describe, expect, it, vi } from "vitest";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import type { Resource, NodeAttributes, TiledClient } from "@tiled/client-core";
+import type { TiledApiClient } from "@blueskyproject/tiled";
+import type { ListingItem } from "@/lib/tiledTypes";
 import { useVerifiedEmptyContainers } from "./useVerifiedEmpty";
 
-function resource(id: string): Resource<NodeAttributes> {
+function resource(id: string): ListingItem {
   return {
     id,
-    attributes: { ancestors: ["root"], structure_family: "container" },
-    links: {},
+    attributes: {
+      ancestors: ["root"],
+      structure_family: "container",
+      specs: [],
+      metadata: {},
+      structure: { contents: null, count: 0 },
+      sorting: null,
+      data_sources: null,
+    },
+    links: { self: "" },
     meta: null,
   };
 }
 
 describe("useVerifiedEmptyContainers", () => {
   it("confirms a candidate empty only when the live probe returns no children", async () => {
-    const search = vi.fn(async (segments: string[]) => {
-      const id = segments[segments.length - 1];
+    const getSearch = vi.fn(async (path: string) => {
+      const id = path.split("/").pop();
       if (id === "a") {
         // Stale count: server reports 0 but still serves a child -> NOT empty.
-        return { data: [{ id: "child" }], links: {}, meta: { count: 1 } };
+        return { data: [{ id: "child" }], links: {}, meta: { count: 1 }, error: null };
       }
-      return { data: [], links: {}, meta: { count: 0 } };
+      return { data: [], links: {}, meta: { count: 0 }, error: null };
     });
-    const client = { search } as unknown as TiledClient;
+    const client = { getSearch } as unknown as TiledApiClient;
 
     const { result } = renderHook(() =>
       useVerifiedEmptyContainers({
@@ -35,16 +44,22 @@ describe("useVerifiedEmptyContainers", () => {
 
     await waitFor(() => expect(result.current.has("b")).toBe(true));
     expect(result.current.has("a")).toBe(false);
-    expect(search).toHaveBeenCalledTimes(2);
-    expect(search).toHaveBeenCalledWith(["root", "b"], {
-      pageLimit: 1,
-      fields: ["structure_family"],
-    });
+    expect(getSearch).toHaveBeenCalledTimes(2);
+    expect(getSearch).toHaveBeenCalledWith(
+      "root/b",
+      {
+        searchOptions: {
+          pageLimit: 1,
+          fields: ["structure_family"],
+        },
+      },
+      { pathMode: "absolute" },
+    );
   });
 
   it("keeps candidates visible when disabled and makes no requests", () => {
-    const search = vi.fn();
-    const client = { search } as unknown as TiledClient;
+    const getSearch = vi.fn();
+    const client = { getSearch } as unknown as TiledApiClient;
 
     const { result } = renderHook(() =>
       useVerifiedEmptyContainers({
@@ -56,12 +71,12 @@ describe("useVerifiedEmptyContainers", () => {
     );
 
     expect(result.current.size).toBe(0);
-    expect(search).not.toHaveBeenCalled();
+    expect(getSearch).not.toHaveBeenCalled();
   });
 
   it("keeps a candidate visible when its probe fails", async () => {
-    const search = vi.fn().mockRejectedValue(new Error("boom"));
-    const client = { search } as unknown as TiledClient;
+    const getSearch = vi.fn().mockRejectedValue(new Error("boom"));
+    const client = { getSearch } as unknown as TiledApiClient;
 
     const { result } = renderHook(() =>
       useVerifiedEmptyContainers({

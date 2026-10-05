@@ -1,10 +1,21 @@
-import type { AboutAuthenticationProvider, UserIdentity } from '@tiled/client-core';
+import type { TiledAuthProvider } from '@blueskyproject/tiled';
+
+/**
+ * Local identity shape (previously imported from `@tiled/client-core`).
+ * The Bluesky SDK does not export an equivalent public type.
+ */
+export interface UserIdentity {
+  id: string;
+  provider?: string;
+  internal?: string;
+  roles?: string[];
+}
 
 export interface AuthState {
   /** Whether the server advertises that authentication is required. */
   authRequired: boolean;
-  /** Discovery from GET / — null before loaded. */
-  providers: AboutAuthenticationProvider[];
+  /** Discovery from GET / — empty before loaded. */
+  providers: TiledAuthProvider[];
   /** Whether we have a usable session. */
   isAuthenticated: boolean;
   /** Whether the initial auth probe/refresh has completed. */

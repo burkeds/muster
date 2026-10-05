@@ -20,8 +20,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@tiled/client-core": ["./tiled-client-core/src/index.ts"],
-      "@tiled/client-h5web": ["./tiled-client-h5web/src/index.ts"]
+      "@tiled/client-h5web": ["../tiled-client-h5web/src/index.ts"]
     }
   },
   "include": ["src"]

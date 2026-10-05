@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { NodeResponse } from '@tiled/client-core';
+import type { NodeMetadata } from '@/lib/tiledTypes';
 
 const mockUseNodeSearch = vi.fn();
 vi.mock('@/hooks/useNodeSearch', () => ({
@@ -9,12 +9,21 @@ vi.mock('@/hooks/useNodeSearch', () => ({
 
 import { useH5ExploreState } from './useH5ExploreState';
 
-function node(attributes: Record<string, unknown>, id = 'c'): NodeResponse {
+function node(attributes: Record<string, unknown>, id = 'c'): NodeMetadata {
   return {
-    data: { id, attributes: attributes as never, links: {}, meta: null },
-    error: null,
-    links: null,
-    meta: {},
+    id,
+    attributes: {
+      ancestors: [],
+      structure_family: 'container',
+      specs: [],
+      metadata: {},
+      structure: { contents: null, count: 0 },
+      sorting: null,
+      data_sources: null,
+      ...attributes,
+    } as NodeMetadata['attributes'],
+    links: { self: '' },
+    meta: null,
   };
 }
 

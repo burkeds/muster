@@ -1,8 +1,9 @@
-import type { NodeResponse } from '@tiled/client-core';
+import type { NodeMetadata } from '@/lib/tiledTypes';
 import { JsonViewer } from '@/components/common/JsonViewer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-function structureSummary(attrs: NonNullable<NodeResponse['data']['attributes']>) {
+function structureSummary(attrs: NodeMetadata['attributes'] | undefined) {
+  if (!attrs) return [] as Array<[string, string]>;
   const family = attrs.structure_family;
   const s = attrs.structure as
     | {
@@ -29,8 +30,8 @@ function structureSummary(attrs: NonNullable<NodeResponse['data']['attributes']>
 }
 
 /** Metadata + structure summary for a node. */
-export function MetadataPanel({ data }: { data: NodeResponse }) {
-  const attrs = data.data?.attributes;
+export function MetadataPanel({ data }: { data: NodeMetadata }) {
+  const attrs = data.attributes;
   return (
     <div className="flex flex-col gap-3">
       <Card>

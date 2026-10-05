@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { Data } from 'plotly.js';
-import type { TableStructure, NodeResponse } from '@tiled/client-core';
+import type { TableStructure, NodeMetadata } from '@/lib/tiledTypes';
 import { useTableData } from '@/hooks/useTableData';
 import { PlotlyPlot } from '@/lib/plot';
 import { PlotCard } from '@/components/viz/PlotCard';
@@ -36,7 +36,7 @@ import { TableForm, type TableRequest } from './TableForm';
 
 export interface TableViewProps {
   segments: string[];
-  metadata: NodeResponse;
+  metadata: NodeMetadata;
 }
 
 /**
@@ -46,10 +46,10 @@ export interface TableViewProps {
  * page through partitions.
  */
 export function TableView({ segments, metadata }: TableViewProps) {
-  const structure = metadata.data?.attributes?.structure as TableStructure | undefined;
+  const structure = metadata.attributes?.structure as TableStructure | undefined;
   const columns = structure?.columns ?? [];
   const npartitions = structure?.npartitions ?? 1;
-  const filename = metadata.data?.id ?? 'table';
+  const filename = metadata.id ?? 'table';
 
   const [request, setRequest] = useState<TableRequest | null>(null);
   const [mode, setMode] = useState<'table' | 'chart'>('table');

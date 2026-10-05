@@ -29,20 +29,23 @@ vi.mock('@/lib/plotExporter', () => ({
 }));
 
 import { ArrayView } from './ArrayVisualizations';
-import type { NodeResponse } from '@tiled/client-core';
+import type { NodeMetadata } from '@/lib/tiledTypes';
 
-function node(shape: number[]): NodeResponse {
+function node(shape: number[]): NodeMetadata {
   return {
-    data: {
-      id: 'arr',
-      attributes: { ancestors: [], structure_family: 'array', structure: { shape } },
-      links: {},
-      meta: null,
+    id: 'arr',
+    attributes: {
+      ancestors: [],
+      structure_family: 'array',
+      specs: [],
+      metadata: {},
+      structure: { shape, chunks: [], dims: null, resizable: false, data_type: { endianness: 'little', kind: 'f', itemsize: 8, dt_units: null } },
+      sorting: null,
+      data_sources: null,
     },
-    error: null,
-    links: null,
-    meta: {},
-  } as NodeResponse;
+    links: { self: '' },
+    meta: null,
+  } as NodeMetadata;
 }
 
 const loaded = (data: unknown) => ({ data, isLoading: false, isError: false });

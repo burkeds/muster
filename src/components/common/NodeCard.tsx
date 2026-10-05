@@ -3,7 +3,7 @@ import { Folders, Table2, Braces, Grid3x3, Rows3, Box } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Resource, NodeAttributes, StructureFamily } from '@tiled/client-core';
+import type { ListingItem, StructureFamily } from '@/lib/tiledTypes';
 
 const FAMILY_META: Record<
   StructureFamily,
@@ -20,11 +20,16 @@ const FAMILY_META: Record<
   awkward: { label: 'Awkward', icon: <Braces />, description: 'Awkward-array data (jagged/nested variable-length data).' },
   ragged: { label: 'Ragged', icon: <Rows3 />, description: 'Ragged (variable-length) array data.' },
   bytes: { label: 'Bytes', icon: <Box />, description: 'Raw byte assets.' },
+  composite: { label: 'Composite', icon: <Box />, description: 'Composite structure.' },
 };
 
-export function familyBadge(family?: StructureFamily, containerCount?: number): ReactNode {
+export function familyBadge(family?: StructureFamily | string, containerCount?: number): ReactNode {
   if (!family) return null;
-  const meta = FAMILY_META[family];
+  const meta = FAMILY_META[family as StructureFamily] ?? {
+    label: family,
+    icon: <Box />,
+    description: family,
+  };
   const count =
     family === 'container'
       ? containerCount !== undefined
@@ -41,7 +46,7 @@ export function familyBadge(family?: StructureFamily, containerCount?: number): 
 }
 
 export interface NodeCardProps {
-  resource: Resource<NodeAttributes>;
+  resource: ListingItem;
   name: string;
   onClick?: () => void;
   isLink?: boolean;
@@ -55,7 +60,7 @@ export function NodeCard({ resource, name, onClick, isLink, footer }: NodeCardPr
     family === 'container'
       ? (resource.attributes?.structure as { count?: number } | undefined)?.count
       : undefined;
-  const metadata = resource.attributes?.metadata;
+  const metadata = resource.attributes?.metadata as Record<string, unknown> | undefined;
 
   return (
     <Card

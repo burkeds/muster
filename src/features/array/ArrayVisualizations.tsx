@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import type { ArrayStructure, NodeResponse } from '@tiled/client-core';
+import type { ArrayStructure, NodeMetadata } from '@/lib/tiledTypes';
 import { useArrayData } from '@/hooks/useArrayData';
 import { PlotlyPlot } from '@/lib/plot';
 import { resolveSequentialScale } from '@/lib/plotTheme';
@@ -13,7 +13,7 @@ import { firstFrameControls, to2D } from './slice';
 
 export interface ArrayViewProps {
   segments: string[];
-  metadata: NodeResponse;
+  metadata: NodeMetadata;
 }
 
 /** Rendering options (line/scatter/bar) for 1-D arrays. */
@@ -31,10 +31,10 @@ const DISABLED_2D_OPTIONS: Record<string, string> = {
 
 /** Primary view for an array node, offering visualization options per ndim. */
 export function ArrayView({ segments, metadata }: ArrayViewProps) {
-  const structure = metadata.data?.attributes?.structure as ArrayStructure | undefined;
+  const structure = metadata.attributes?.structure as ArrayStructure | undefined;
   const shape = structure?.shape ?? [];
   const itemsize = structure?.data_type?.itemsize ?? 1;
-  const filename = metadata.data?.id ?? 'array';
+  const filename = metadata.id ?? 'array';
 
   if (shape.length === 0) {
     return <StateMessage kind="empty" title="No shape information" />;

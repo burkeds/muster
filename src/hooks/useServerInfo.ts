@@ -6,8 +6,8 @@ export function useServerInfo() {
   const client = useOptionalTiledClient();
 
   return useQuery({
-    queryKey: ['tiled', 'about', client?.baseUrl],
-    queryFn: () => client!.about(),
+    queryKey: ['tiled', 'about', client?.getBaseUrl()],
+    queryFn: () => client!.getServerInfo(),
     enabled: !!client,
     staleTime: 5 * 60 * 1000,
   });

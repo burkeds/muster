@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { TiledAuthProvider } from '@blueskyproject/tiled';
 import { useAuth } from '@/auth/auth-provider';
 import { useOptionalTiledClient } from '@/config/useTiledClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { StatusLine } from '@/components/common/StatusLine';
 import { ExternalLink } from 'lucide-react';
 import { useDeviceCodeLogin } from './useDeviceCodeLogin';
-import type { AboutAuthenticationProvider } from '@tiled/client-core';
 
 /** Internal-provider login form + OIDC device-code login for external providers. */
 export function LoginPage() {
@@ -35,7 +35,13 @@ export function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      const tokens = await client.login(internalProvider, username, password);
+      const tokens = await client.loginWithUsernamePassword(
+        username,
+        password,
+        undefined,
+        internalProvider,
+      );
+      if (!tokens) throw new Error('Login failed');
       await onLogin(tokens);
       navigate('/browse', { replace: true });
     } catch (err) {
@@ -45,7 +51,7 @@ export function LoginPage() {
     }
   };
 
-  const startExternal = (provider: AboutAuthenticationProvider) => {
+  const startExternal = (provider: TiledAuthProvider) => {
     void device.start(provider);
   };
 

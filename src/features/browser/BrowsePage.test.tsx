@@ -134,12 +134,10 @@ describe('BrowsePage', () => {
     mockUseNodeSearch.mockReturnValue(baseResult());
     mockUseNodeMetadata.mockReturnValue({
       data: {
-        data: {
-          id: 'generated',
-          attributes: {
-            structure_family: 'container',
-            data_sources: [{ mimetype: 'application/x-hdf5' }],
-          },
+        id: 'generated',
+        attributes: {
+          structure_family: 'container',
+          data_sources: [{ mimetype: 'application/x-hdf5' }],
         },
       },
       isLoading: false,
@@ -188,10 +186,8 @@ describe('BrowsePage', () => {
     );
     mockUseNodeMetadata.mockReturnValue({
       data: {
-        data: {
-          id: 'examples',
-          attributes: { structure_family: 'container', data_sources: [] },
-        },
+        id: 'examples',
+        attributes: { structure_family: 'container', data_sources: [] },
       },
       isLoading: false,
     });
@@ -342,17 +338,15 @@ describe('BrowsePage', () => {
     mockUseNodeSearch.mockReturnValue(baseResult());
     mockUseNodeMetadata.mockReturnValue({
       data: {
-        data: {
-          id: 'generated',
-          attributes: {
-            structure_family: 'container',
-            structure: { count: 2 },
-            specs: [{ name: 'MySpec', version: '1' }],
-            metadata: { sample: 'X' },
-          },
-          links: {},
-          meta: null,
+        id: 'generated',
+        attributes: {
+          structure_family: 'container',
+          structure: { count: 2 },
+          specs: [{ name: 'MySpec', version: '1' }],
+          metadata: { sample: 'X' },
         },
+        links: {},
+        meta: null,
       },
       isLoading: false,
     });

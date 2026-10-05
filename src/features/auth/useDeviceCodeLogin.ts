@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DeviceCodeError, type DeviceCodeResponse } from '@tiled/client-core';
-import type { TiledClient } from '@tiled/client-core';
-import type { AuthTokens, AboutAuthenticationProvider } from '@tiled/client-core';
+import type { TiledApiClient, TiledAuthProvider } from '@blueskyproject/tiled';
+import {
+  DeviceCodeError,
+  pollDeviceCodeToken,
+  startDeviceCodeAuth,
+  type AuthTokens,
+  type DeviceCodeResponse,
+} from '@/lib/deviceCodeAuth';
+import { useOptionalTiledConfig } from '@/config/TiledConfigProvider';
 
 export interface DeviceLoginState {
   /** Active device-code request, or null when idle/complete/errored. */
@@ -19,16 +25,23 @@ const initialState: DeviceLoginState = { device: null, waiting: false, error: nu
  * a Tiled device flow, opens the Keycloak authorization URI in a new tab, and
  * polls the verification endpoint until the user authorizes, then hands the
  * tokens to `onSuccess`.
+ *
+ * Uses local pure helpers (SDK has no device-code support). Optional
+ * `linkRewrite` from TiledConfig rewrites the verification URI through the
+ * same-origin proxy.
  */
 export function useDeviceCodeLogin(
-  client: Pick<TiledClient, 'startDeviceCode' | 'pollDeviceCode'> | null,
+  client: TiledApiClient | null,
   onSuccess: (tokens: AuthTokens) => void,
 ) {
+  const config = useOptionalTiledConfig();
   const [state, setState] = useState<DeviceLoginState>(initialState);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const polling = useRef(false);
   const clientRef = useRef(client);
   clientRef.current = client;
+  const rewriteRef = useRef(config?.linkRewrite);
+  rewriteRef.current = config?.linkRewrite;
   const onSuccessRef = useRef(onSuccess);
   onSuccessRef.current = onSuccess;
 
@@ -59,11 +72,10 @@ export function useDeviceCodeLogin(
           return;
         }
         try {
-          const tokens = await clientRef.current?.pollDeviceCode({
+          const tokens = await pollDeviceCodeToken({
             verificationUri: device.verification_uri,
             deviceCode: device.device_code,
           });
-          if (!tokens) throw new Error('No Tiled client available');
           settle({ waiting: false, error: null, device: null });
           onSuccessRef.current(tokens);
         } catch (err) {
@@ -85,14 +97,16 @@ export function useDeviceCodeLogin(
   );
 
   const start = useCallback(
-    async (provider: AboutAuthenticationProvider) => {
+    async (provider: TiledAuthProvider) => {
       clearTimers();
       polling.current = false;
       setState({ device: null, waiting: true, error: null });
       try {
-        const c = clientRef.current;
-        if (!c) throw new Error('No Tiled client available');
-        const device = await c.startDeviceCode(provider);
+        if (!clientRef.current) throw new Error('No Tiled client available');
+        const device = await startDeviceCodeAuth({
+          provider,
+          rewrite: rewriteRef.current,
+        });
         setState({ device, waiting: true, error: null });
         // Open Keycloak in a new tab for the user to log in.
         window.open(device.authorization_uri, '_blank');

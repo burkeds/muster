@@ -34,7 +34,17 @@ export interface ServerProviderProps {
   children: ReactNode;
 }
 
-/** Manages the list of Tiled servers + the active one, feeding TiledConfig. */
+/**
+ * Manages the list of Tiled servers + the active one, feeding TiledConfig.
+ *
+ * Query-cache isolation: representative hooks under `muster/src/hooks/**`
+ * (`useServerInfo`, `useNodeMetadata`, `useNodeSearch`, …) already put the
+ * server base URL in their TanStack Query keys (e.g.
+ * `['tiled','about', client base]`). Switching servers therefore cannot serve
+ * one server's cached data under another server's key, so we do not call
+ * `queryClient.clear()` here (which would force every consumer of
+ * ServerProvider to mount under a QueryClientProvider).
+ */
 export function ServerProvider({ envUrl, envApiKey, children }: ServerProviderProps) {
   const [servers, setServers] = useState<Server[]>(() =>
     loadServers(envUrl, envApiKey),

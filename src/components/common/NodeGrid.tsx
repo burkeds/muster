@@ -1,19 +1,19 @@
 import type { ReactNode } from 'react';
-import type { Resource, NodeAttributes } from '@tiled/client-core';
+import type { ListingItem } from '@/lib/tiledTypes';
 import { NodeCard } from './NodeCard';
 
 export interface NodeGridProps {
   /** Resource list keyed by child name. */
-  resources: Record<string, Resource<NodeAttributes>> | Resource<NodeAttributes>[];
-  nameOf?: (resource: Resource<NodeAttributes>) => string;
-  onSelect: (name: string, resource: Resource<NodeAttributes>) => void;
-  isLink?: (resource: Resource<NodeAttributes>) => boolean;
-  footer?: (resource: Resource<NodeAttributes>) => ReactNode;
+  resources: Record<string, ListingItem> | ListingItem[];
+  nameOf?: (resource: ListingItem) => string;
+  onSelect: (name: string, resource: ListingItem) => void;
+  isLink?: (resource: ListingItem) => boolean;
+  footer?: (resource: ListingItem) => ReactNode;
   empty?: ReactNode;
 }
 
 /** Default child name: the node's own key (id), per Tiled search results. */
-export function defaultNameOf(r: Resource<NodeAttributes>): string {
+export function defaultNameOf(r: ListingItem): string {
   return r.id ?? (r.attributes?.ancestors ?? []).at(-1) ?? '';
 }
 
