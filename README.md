@@ -27,7 +27,7 @@ TypeScript source — there are no git submodules, and dev never generates artif
 | Repo (dir) | Package | Purpose |
 | --- | --- | --- |
 | `tiled-client-h5web/packages/tiled-client-h5web-react` | `@photonic/tiled-client-h5web-react` | Optional React asset: modular h5web explorer (`H5Explorer`, `TiledH5Provider`, `TiledH5Api`, mappers, detection) |
-| `tiled-client-h5web/packages/tiled-client-h5web` | `@photonic/tiled-client-h5web` | Standalone embeddable webplugin (`<tiled-h5web>` custom element) — not imported by this app |
+| `tiled-client-h5web/packages/tiled-client-h5web` | `@photonic/tiled-client-h5web` | HDF5 explorer webplugin (`<tiled-h5web>` custom element) for bundler-based React apps that already use `@blueskyproject/tiled` — not imported by this app |
 | this directory | `muster` | The React app (browse/search/view/download/stream) |
 
 - The **"talk to Tiled"** layer is the official `@blueskyproject/tiled` SDK's
