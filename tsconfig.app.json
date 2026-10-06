@@ -20,7 +20,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@tiled/client-h5web-react": ["../tiled-client-h5web/packages/react/src/index.ts"]
+      "@photonic/tiled-client-h5web-react": [
+        "../tiled-client-h5web/packages/tiled-client-h5web-react/src/index.ts"
+      ]
     }
   },
   "include": ["src"]

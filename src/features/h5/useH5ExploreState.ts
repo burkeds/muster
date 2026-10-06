@@ -3,7 +3,7 @@ import {
   containerHasHdf5Format,
   isH5CompatibleFamilies,
   supportsHdf5,
-} from '@tiled/client-h5web-react';
+} from '@photonic/tiled-client-h5web-react';
 import { useNodeSearch } from '@/hooks/useNodeSearch';
 
 export interface UseH5ExploreStateParams {

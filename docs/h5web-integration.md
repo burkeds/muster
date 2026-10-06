@@ -4,9 +4,9 @@ This document explains how Muster (a Tiled web client) embeds the
 [h5web](https://github.com/silx-kit/h5web) HDF5 explorer (`@h5web/app`) and drives it
 entirely through the Tiled HTTP API — no direct filesystem or HDF5 access.
 
-> **Modular note:** the H5Web bridge lives in the `@tiled/client-h5web` plugin
-> (`tiled-client-h5web/`, a git submodule / npm workspace package), built on the
-> `@tiled/client-core` plugin. The app only keeps thin wiring in
+> **Modular note:** the H5Web bridge lives in the `@photonic/tiled-client-h5web-react`
+> package (`tiled-client-h5web/packages/tiled-client-h5web-react/`, an npm workspace package consumed
+> via a Vite/tsconfig alias — no git submodule). The app only keeps thin wiring in
 > `src/features/h5/`. See the README's "Modular structure" section.
 
 ## Concepts
@@ -21,7 +21,7 @@ Tiled indexes the *contents* of an HDF5 file into its normal node tree:
   `GET /array/full/{path}?slice=...`);
 - the whole file is additionally advertised with the `application/x-hdf5`
   media type, which Tiled reports when you query the node with
-  `?include_data_sources=true` (see `supportsHdf5` in `@tiled/client-h5web`).
+  `?include_data_sources=true` (see `supportsHdf5` in `@photonic/tiled-client-h5web-react`).
 
 So from the client's point of view, "viewing an HDF5 file" is just "browsing a
 sub-tree of container/array nodes" using endpoints the client already knows.
@@ -71,7 +71,7 @@ supportsHdf5(metadata) ── true? ──► H5ViewLauncher ("View with H5Web" 
                                          Tiled REST API (/search, /array/full, /metadata)
 ```
 
-### 1. Detection: `supportsHdf5` (`@tiled/client-h5web`)
+### 1. Detection: `supportsHdf5` (`@photonic/tiled-client-h5web-react`)
 
 Decides whether a node offers HDF5 and should show the "View with H5Web" button:
 
@@ -92,7 +92,7 @@ a "View with H5Web" button that swaps the content **in place** for the explorer:
 - "Back to list" flips the same state back to the normal listing.
 - A `Suspense` fallback shows a loading state during the lazy chunk fetch.
 
-### 3. Provider wiring: `TiledH5Provider` (`@tiled/client-h5web`)
+### 3. Provider wiring: `TiledH5Provider` (`@photonic/tiled-client-h5web-react`)
 
 Creates a single `TiledH5Api` instance (memoized on base URL + credentials + root
 path) and mounts h5web's `<DataProvider api={api}>` context. `H5ExploreView`
@@ -101,7 +101,7 @@ path) and mounts h5web's `<DataProvider api={api}>` context. `H5ExploreView`
 Credentials (`apiKey` / `bearerToken`) come from the same auth plumbing the rest of
 the app uses (`useRequestAuth`), so proxies, API keys, and OIDC sessions all work.
 
-### 4. The bridge: `TiledH5Api` (`@tiled/client-h5web`)
+### 4. The bridge: `TiledH5Api` (`@photonic/tiled-client-h5web-react`)
 
 Implements the three abstract methods. The root node path (`filepath`, e.g.
 `/myfile.h5`) is prefixed to every h5web path to form Tiled node segments:
@@ -119,7 +119,7 @@ h5web `/group/dataset` under root `myfile.h5` becomes Tiled segments
 **`getEntity`** calls the shared `search()` request helper (same one the browser
 uses), asking for `fields=['structure_family','structure','specs']` with a large
 page limit (300). Every returned child is mapped with `mapChildResource`
-(`@tiled/client-h5web/src/mapEntity.ts`):
+(`@photonic/tiled-client-h5web-react/src/mapEntity.ts`):
 
 - `structure_family === 'container'` → h5web `EntityKind.Group`
 - `structure_family === 'array'` → h5web `EntityKind.Dataset` with `shape` from
@@ -142,7 +142,7 @@ page limit (300). Every returned child is mapped with `mapChildResource`
 `metadata` object as the attribute map; failures fail soft (empty attributes) so the
 explorer still works if metadata is missing or unreadable.
 
-**DType translation** — `mapDataType` (`@tiled/client-h5web/src/mapDType.ts`) converts
+**DType translation** — `mapDataType` (`@photonic/tiled-client-h5web-react/src/mapDType.ts`) converts
 Tiled's numpy `__array_interface__` style `data_type` (`kind`, `itemsize`,
 `endianness`, optional `fields`) into h5web `DType` objects: float/int/uint, bool,
 complex, time, fixed-length ASCII/UTF-8 strings, and compound/structured types with
@@ -150,43 +150,48 @@ a field map.
 
 ## Request URLs actually issued
 
-For a root node `myfile.h5`, base `https://host/api/v1`:
+For a root node `myfile.h5`, base `https://host/api/v1`, the underlying HTTP
+requests are roughly (via the `@blueskyproject/tiled` `TiledApiClient`):
 
 ```
-# Expand a group
+# Expand a group — GET /search/... via client.getSearch(...)
 GET /search/myfile.h5?fields=structure_family&fields=structure&fields=specs&page[limit]=300
 
-# Read one dataset slice as raw binary (numeric)
-GET /array/full/myfile.h5/group/data?slice=0:1&format=application/octet-stream
+# Read one dataset slice as raw binary (numeric) — client.getArrayAsBuffer(...)
+GET /array/full/myfile.h5/group/data?format=application/octet-stream&stack=0,1
 
-# Read one dataset as JSON (complex/string/structured/unknown)
-GET /array/full/myfile.h5/group/data?slice=0:1&format=application/json
+# Read one dataset as JSON (complex/string/structured/unknown) — client.getArrayAsJSON(...)
+GET /array/full/myfile.h5/group/data?format=application/json&stack=0,1
 
-# Node metadata (shown as the dataset's attributes)
+# Node metadata (shown as the dataset's attributes) — client.getMetadata(...)
 GET /metadata/myfile.h5/group/data?fields=metadata
 ```
 
-These all reuse the typed API layer in `@tiled/client-core` (auth headers, proxy
-awareness, error normalization), so `TiledH5Api` stays a thin adapter.
+For typical h5web selections `TiledH5Api` maps leading integer indices to the
+SDK's `stack` option. Selection strings the SDK can't express (general slices
+like `0:1,3:` ) fall back to a direct `GET /array/full/...?slice=...&format=...`
+request built on the client's own axios instance. All calls go through the
+per-server `TiledApiClient` (auth headers, proxy awareness, error normalization),
+so `TiledH5Api` stays a thin adapter.
 
 ## Key files
 
-The H5Web bridge lives in the `@tiled/client-h5web` plugin (`tiled-client-h5web/`),
-consumed by the app as a git submodule / npm workspace package. The app only keeps
-thin wiring under `src/features/h5/` (`H5ViewLauncher` + the `H5ExploreView` adapter
-that supplies the active client from context).
+The H5Web bridge lives in the `@photonic/tiled-client-h5web-react` package
+(`tiled-client-h5web/packages/tiled-client-h5web-react/`), consumed by the app as an npm workspace
+package. The app only keeps thin wiring under `src/features/h5/` (`H5ViewLauncher` +
+the `H5ExploreView` adapter that supplies the active client from context).
 
 | File (location) | Role |
 | --- | --- |
-| `tiled-client-h5web/src/supportsHdf5.ts` | HDF5 detection (`application/x-hdf5` or `.h5`-like container name) |
+| `tiled-client-h5web/packages/tiled-client-h5web-react/src/supportsHdf5.ts` | HDF5 detection (`application/x-hdf5` or `.h5`-like container name) |
 | `src/features/h5/H5ViewLauncher.tsx` | App-shell lazy "View with H5Web" toggle around normal content |
-| `src/features/h5/H5ExploreView.tsx` | App adapter: injects the active client into the plugin's `H5Explorer` |
-| `tiled-client-h5web/src/H5Explorer.tsx` | Self-contained h5web `<App/>` over the Tiled client |
-| `tiled-client-h5web/src/TiledH5Provider.tsx` | Wires `TiledH5Api` into h5web's `DataProvider` context |
-| `tiled-client-h5web/src/TiledH5Api.ts` | `DataProviderApi` implementation over a `TiledClientLike` |
-| `tiled-client-h5web/src/mapEntity.ts` | Tiled resource → h5web entity (`container`→Group, `array`→Dataset) |
-| `tiled-client-h5web/src/mapDType.ts` | Tiled numpy `data_type` → h5web `DType` |
-| `tiled-client-core/src/requests.ts` | `search`, `arrayFullUrl`, `buildResourceUrl` helpers used above |
+| `src/features/h5/H5ExploreView.tsx` | App adapter: injects the active client into the `@photonic/tiled-client-h5web-react` `H5Explorer` |
+| `tiled-client-h5web/packages/tiled-client-h5web-react/src/H5Explorer.tsx` | Self-contained h5web `<App/>` over the Tiled client |
+| `tiled-client-h5web/packages/tiled-client-h5web-react/src/TiledH5Provider.tsx` | Wires `TiledH5Api` into h5web's `DataProvider` context |
+| `tiled-client-h5web/packages/tiled-client-h5web-react/src/TiledH5Api.ts` | `DataProviderApi` implementation over a `@blueskyproject/tiled` `TiledApiClient` |
+| `tiled-client-h5web/packages/tiled-client-h5web-react/src/mapEntity.ts` | Tiled resource → h5web entity (`container`→Group, `array`→Dataset) |
+| `tiled-client-h5web/packages/tiled-client-h5web-react/src/mapDType.ts` | Tiled numpy `data_type` → h5web `DType` |
+| `tiled-client-h5web/packages/tiled-client-h5web-react/src/resolveClient.ts` | `client`/`tiledBaseUrl`/`apiKey`/`token` → `TiledApiClient` resolution |
 
 ## Design notes / trade-offs
 

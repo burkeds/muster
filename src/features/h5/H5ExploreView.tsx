@@ -1,4 +1,4 @@
-import { H5Explorer } from "@tiled/client-h5web-react";
+import { H5Explorer } from "@photonic/tiled-client-h5web-react";
 import { useOptionalTiledClient } from "@/config/useTiledClient";
 import "./h5web-theme.css";
 
@@ -9,7 +9,7 @@ export interface H5ExploreViewProps {
 
 /**
  * App adapter for the h5web explorer: supplies the active configured Tiled
- * client to the React `H5Explorer` from @tiled/client-h5web-react.
+ * client to the React `H5Explorer` from @photonic/tiled-client-h5web-react.
  */
 export function H5ExploreView({ segments }: H5ExploreViewProps) {
   const client = useOptionalTiledClient();
