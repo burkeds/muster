@@ -20,14 +20,14 @@ See the `tiled-client-conventions` skill (installed to
 
 ## Modular structure
 
-This app consumes `@photonic/tiled-client-h5web-react` (hosted in the `tiled-client-h5web`
-monorepo) as an **npm workspace package**, wired via Vite/tsconfig aliases to its
-TypeScript source — there are no git submodules, and dev never generates artifacts.
+This app consumes `@photonic/tiled-client-h5web` (hosted in the `tiled-client-h5web`
+repo) as an **npm workspace package**, wired via Vite/tsconfig aliases to its
+TypeScript source (`src/index.ts`) — there are no git submodules, and dev never
+generates artifacts.
 
 | Repo (dir) | Package | Purpose |
 | --- | --- | --- |
-| `tiled-client-h5web/packages/tiled-client-h5web-react` | `@photonic/tiled-client-h5web-react` | Optional React asset: modular h5web explorer (`H5Explorer`, `TiledH5Provider`, `TiledH5Api`, mappers, detection) |
-| `tiled-client-h5web/packages/tiled-client-h5web` | `@photonic/tiled-client-h5web` | HDF5 explorer webplugin (`<tiled-h5web>` custom element) for bundler-based React apps that already use `@blueskyproject/tiled` — not imported by this app |
+| `tiled-client-h5web` | `@photonic/tiled-client-h5web` | HDF5 (h5web) explorer for Tiled: React library (`H5Explorer`, `TiledH5Provider`, `TiledH5Api`, mappers, detection) + a `<tiled-h5web>` webcomponent (subpath `./webcomponent`, not imported by this app). |
 | this directory | `muster` | The React app (browse/search/view/download/stream) |
 
 - The **"talk to Tiled"** layer is the official `@blueskyproject/tiled` SDK's
@@ -35,7 +35,7 @@ TypeScript source — there are no git submodules, and dev never generates artif
   capability gaps the SDK doesn't cover (device-code OAuth, WebSocket stream URLs,
   raw download/asset URLs, general Tiled slice strings) are handled by small local
   modules under `src/lib/`.
-- The **H5Web feature** is provided by `@photonic/tiled-client-h5web-react` and wired into
+- The **H5Web feature** is provided by `@photonic/tiled-client-h5web` and wired into
   the app through the thin `src/features/h5/` adapter (`H5ExploreView`, `H5ViewLauncher`).
 
 ## Getting started
@@ -164,7 +164,7 @@ list" button to return.
   tree and streams only the slice you actually view, so nothing is bulk-downloaded
   up front.
 
-Implementation lives in `src/features/h5/`, backed by the `@photonic/tiled-client-h5web-react`
+Implementation lives in `src/features/h5/`, backed by the `@photonic/tiled-client-h5web`
 package. See [`docs/h5web-integration.md`](docs/h5web-integration.md) for a full walkthrough
 of how the client drives h5web through the Tiled API.
 

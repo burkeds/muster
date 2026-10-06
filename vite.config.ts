@@ -8,14 +8,11 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
-      // Consume the React h5web plugin from the sibling monorepo package source.
+      // Consume the h5web package source from the sibling repo.
       {
-        find: '@photonic/tiled-client-h5web-react',
+        find: '@photonic/tiled-client-h5web',
         replacement: fileURLToPath(
-          new URL(
-            '../tiled-client-h5web/packages/tiled-client-h5web-react/src/index.ts',
-            import.meta.url,
-          ),
+          new URL('../tiled-client-h5web/src/index.ts', import.meta.url),
         ),
       },
       // plotly.js's CJS source breaks under Vite's dev optimizer (the image trace
