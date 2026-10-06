@@ -24,9 +24,9 @@ const config: StorybookConfig = {
         alias: [
           { find: '@', replacement: fileURLToPath(new URL('../src', import.meta.url)) },
           {
-            find: '@tiled/client-h5web',
+            find: '@tiled/client-h5web-react',
             replacement: fileURLToPath(
-              new URL('../tiled-client-h5web/src/index.ts', import.meta.url),
+              new URL('../tiled-client-h5web/packages/react/src/index.ts', import.meta.url),
             ),
           },
           { find: /^plotly\.js$/, replacement: 'plotly.js-dist-min' },

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { StatusLine } from "@/components/common/StatusLine";
 import { StateMessage } from "@/components/common/StateMessage";
+import { MusterLogo } from "@/components/common/MusterLogo";
 import { Plus, Check, Server as ServerIcon, Trash2 } from "lucide-react";
 import type { Server } from "@/config/Servers";
 
@@ -82,9 +83,9 @@ export function WelcomeScreen() {
 
   return (
     <div className="mx-auto mt-10 flex max-w-2xl flex-col gap-6 px-4">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">Muster</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <div className="flex flex-col items-center text-center">
+        <MusterLogo iconClassName="h-14 w-14" textClassName="text-2xl" tagline />
+        <p className="mt-3 text-sm text-muted-foreground">
           A Tiled web client. Pick a Tiled server to connect to, or add your
           own.
         </p>

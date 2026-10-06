@@ -38,18 +38,32 @@ export interface StartDeviceCodeArgs {
 /**
  * POST the provider's auth_endpoint to begin a Tiled device-code login. Returns
  * the Keycloak authorization_uri (to open in a new tab) and the verification
- * endpoint + device code to poll. Only verification_uri is rewritten to
- * same-origin; authorization_uri stays cross-origin for the browser tab.
+ * endpoint + device code to poll.
+ *
+ * Both `auth_endpoint` (this start POST) and `verification_uri` (the poll) are
+ * rewritten through the same route the client uses, so remote servers are
+ * reached via the same-origin proxy without CORS. `authorization_uri` stays
+ * cross-origin (it is opened in a new tab, not fetched).
  */
 export async function startDeviceCodeAuth(
   args: StartDeviceCodeArgs,
 ): Promise<DeviceCodeResponse> {
   const endpoint = args.provider.links?.auth_endpoint;
   if (!endpoint) throw new Error('Provider has no auth_endpoint');
-  const res = await fetch(endpoint, { method: 'POST' });
+  const rewrite = args.rewrite ?? ((url: string) => url);
+
+  let res: Response;
+  try {
+    res = await fetch(rewrite(endpoint), { method: 'POST' });
+  } catch (err) {
+    // A cross-origin start (or unreachable host) surfaces as TypeError: Failed
+    // to fetch. Point users at the CORS/proxy requirement rather than showing
+    // the opaque browser message.
+    const detail = err instanceof Error && err.message ? err.message : String(err);
+    throw new Error(`Cannot reach the authentication endpoint (CORS or network). ${detail}`);
+  }
   if (!res.ok) throw new Error(`Cannot start device login (${res.status})`);
   const data = (await res.json()) as DeviceCodeResponse;
-  const rewrite = args.rewrite ?? ((url: string) => url);
   return { ...data, verification_uri: rewrite(data.verification_uri) };
 }
 

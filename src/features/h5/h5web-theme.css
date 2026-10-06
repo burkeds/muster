@@ -1,0 +1,70 @@
+/*
+ * Re-theme h5web (the embedded explorer) to match muster's design tokens.
+ *
+ * h5web styles itself with CSS custom properties on its root element, which we
+ * reach through the stable `[data-allow-dark-mode]` attribute that h5web puts on
+ * that root whenever dark mode is allowed. We override those variables with
+ * muster's Tailwind tokens (`hsl(var(--...))`) for both light and dark, keyed off
+ * muster's `.dark` class.
+ *
+ * We also neutralize h5web's own auto dark-mode (`filter: invert()`), which keys
+ * off the OS `prefers-color-scheme`, so dark mode is driven exclusively by
+ * muster's explicit theme toggle instead — keeping the two in sync.
+ *
+ * Specificity: `.h5web-themed [data-allow-dark-mode]` ties with h5web's own
+ * `.root[data-allow-dark-mode]`, so `!important` + this stylesheet loading after
+ * h5web's (imported by the lazy-loaded H5ExploreView) wins.
+ */
+
+.h5web-themed [data-allow-dark-mode] {
+  filter: none !important;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+
+  /* Surfaces stay neutral (muster's warm tones); the app's ring color is used
+     only as accent detail (info text, slider data-track). */
+  --primary: hsl(var(--card));
+  --primary-light: hsl(var(--muted));
+  --primary-lighter: hsl(var(--secondary));
+  --primary-dark: hsl(var(--foreground));
+  --primary-bg: hsl(var(--card));
+  --primary-light-bg: hsl(var(--muted));
+  --primary-dark-bg: hsl(var(--border));
+
+  --secondary: hsl(var(--muted-foreground));
+  --secondary-light: hsl(var(--muted));
+  --secondary-lighter: hsl(var(--card));
+  --secondary-dark: hsl(var(--ring));
+  --secondary-dark-15: hsl(var(--ring) / 0.15);
+  --secondary-darker: hsl(var(--foreground));
+  --secondary-bg: hsl(var(--muted));
+  --secondary-light-bg: hsl(var(--muted));
+}
+
+/* Dark mode: driven by muster's `.dark` class (never h5web's OS invert). */
+html.dark .h5web-themed [data-allow-dark-mode] {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+
+  --primary: hsl(var(--secondary));
+  --primary-light: hsl(var(--accent));
+  --primary-lighter: hsl(var(--secondary));
+  --primary-dark: hsl(var(--foreground));
+  --primary-bg: hsl(var(--card));
+  --primary-light-bg: hsl(var(--secondary));
+  --primary-dark-bg: hsl(var(--border));
+
+  --secondary: hsl(var(--muted-foreground));
+  --secondary-light: hsl(var(--secondary));
+  --secondary-lighter: hsl(var(--card));
+  --secondary-dark: hsl(var(--ring));
+  --secondary-dark-15: hsl(var(--ring) / 0.15);
+  --secondary-darker: hsl(var(--foreground));
+  --secondary-bg: hsl(var(--secondary));
+  --secondary-light-bg: hsl(var(--secondary));
+
+  /* Floated/tooltip surfaces default to white in h5web; pull them into theme. */
+  --h5w-tooltip--bgColor: hsl(var(--popover));
+  --h5w-selector-menu--bgColor: hsl(var(--popover));
+  --h5w-toolbar-popup--bgColor: hsl(var(--popover));
+}

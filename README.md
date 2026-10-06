@@ -12,43 +12,40 @@ search, data browsing, slicing, download/format conversion, and live streaming.
 - Plotly (`react-plotly.js`) for scientific data views
 - vitest + Storybook
 
-See the repo's `.opencode/skills/tiled-client-conventions` for the architecture and
-coding conventions this app follows.
+See the repo's `tiled-client-conventions` skill (installed to
+`~/.config/opencode/skills/`) for the architecture and coding conventions this
+app follows.
 
 ## Modular structure
 
-This app is split into three git repositories (this one plus two plugins it consumes
-as **git submodules** / npm workspace packages):
+This app consumes the `@tiled/client-h5web-react` package (hosted in the
+`tiled-client-h5web` monorepo) as an npm workspace package wired via
+Vite/tsconfig aliases — there are no git submodules:
 
-| Repo (dir)                | Package              | Purpose                                                       |
-| ------------------------- | -------------------- | ------------------------------------------------------------- |
-| `tiled-client-core/`      | `@tiled/client-core` | Standalone, framework-agnostic `TiledClient` for the Tiled API |
-| `tiled-client-h5web/`     | `@tiled/client-h5web`| Modular h5web explorer over a `TiledClientLike` object         |
-| this directory           | `muster`            | The React app (browse/search/view/download/stream)             |
+| Repo (dir)                   | Package                    | Purpose                                                                 |
+| ---------------------------- | --------------------------- | ----------------------------------------------------------------------- |
+| `tiled-client-h5web/packages/react` | `@tiled/client-h5web-react` | Optional React asset: modular h5web explorer (`H5Explorer`, `TiledH5Provider`, `TiledH5Api`, mappers, detection) |
+| `tiled-client-h5web/packages/webplugin` | `@tiled/client-h5web` | Standalone embeddable webplugin (`<tiled-h5web>` custom element) — not imported by this app |
+| this directory              | `muster`                    | The React app (browse/search/view/download/stream)                       |
 
-
-The plugins live in this repo as git submodules and are linked as npm workspaces:
+The `@tiled/client-h5web-react` package is linked as an npm workspace and the app
+consumes its **TypeScript source directly** via a Vite/tsconfig alias to
+`src/index.ts`:
 
 ```jsonc
-{ "workspaces": ["tiled-client-core", "tiled-client-h5web"] }
+{ "workspaces": ["../tiled-client-h5web/packages/react"] }
 ```
 
-The app consumes their **TypeScript source directly** (via `exports`/`main` pointing
-at `src/index.ts` plus Vite/tsconfig aliases), so there is no build step during
-development.
-
-- The "talk to Tiled" layer lives entirely in `@tiled/client-core` — swap it for any
-  other `TiledClientLike` implementation.
-- The H5Web feature is provided by `@tiled/client-h5web` and wired into the app through
-  the thin `src/features/h5/H5ExploreView` adapter (supplies the active client from
-  context) and `H5ViewLauncher`.
+- The "talk to Tiled" layer is the official `@blueskyproject/tiled` SDK's
+  `TiledApiClient` (instantiated per-server, see `src/config/`).
+- The H5Web feature is provided by `@tiled/client-h5web-react` and wired into the
+  app through the thin `src/features/h5/H5ExploreView` adapter (supplies the active
+  client from context) and `H5ViewLauncher`.
 
 ## Getting started
 
 ```bash
-# pull the plugin submodules (if not already checked out)
-git submodule update --init --recursive
-
+# make sure the tiled-client-h5web monorepo is present next to muster/ (see AGENTS.md)
 npm install
 npm run dev        # Vite dev server on http://localhost:5173
 ```
@@ -220,21 +217,22 @@ You can also switch servers anytime from the dropdown in the header.
 
 ```
 src/
-├─ api/          # hand-rolled typed Tiled HTTP/WS client (types, client, requests, auth, stream, data)
-├─ auth/         # token manager + auth provider/context
-├─ config/       # ServerProvider + server list/active-state + TiledConfig (env-driven)
+├─ auth/         # token manager + auth provider/context (per-server isolation)
+├─ config/       # ServerProvider + server list/active-state + TiledApiClient per server + TiledConfig (env-driven)
 ├─ hooks/        # react-query hooks (search, metadata, array, table, stream)
-├─ components/   # shadcn ui + layout + common components
+├─ components/   # shadcn ui + layout + common + finch components
 ├─ features/     # browse, node (family views), search, download, stream, metadata, auth, h5 (H5Web explorer)
-├─ lib/          # cn() helper, Plotly wrapper
+├─ lib/          # cn() helper, Plotly wrapper, Tiled capability-gap helpers (device-code OAuth, stream URLs, download URLs)
 └─ utils/        # link/path helpers
 ```
 
 Notes:
 
-- The API layer is fetch-based and **hand-rolled** (not the `@blueskyproject/tiled`
-  npm package) for full type control. All `links` returned by the server are rewritten
-  to relative paths so the client survives reverse-proxying.
+- The "talk to Tiled" layer is the official **`@blueskyproject/tiled`** SDK's
+  `TiledApiClient`, instantiated per server (`src/config/useTiledClient.ts`). A
+  few capability gaps the SDK doesn't cover (device-code OAuth, WebSocket stream
+  URLs, raw download/asset URL building) are handled by small pure-function
+  modules under `src/lib/`.
 - Auth support: API keys (single-user) and OAuth2 password/OIDC sessions with token
   refresh. Data requests prefer the bearer session token when present, else the API key.
 - Sparse/Awkward/Ragged nodes currently render read-only structure info with a

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { DisplaySettings } from "@/components/theme/DisplaySettings";
+import { MusterIcon } from "@/components/common/MusterLogo";
 import type { NavRouteItem } from "@/types/navigation";
 
 export interface AppLayoutProps {
@@ -23,7 +24,10 @@ export function AppLayout({ routes, brand, headerActions }: AppLayoutProps) {
       <Sidebar routes={routes} brand={brand} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card px-4">
-          <span className="text-sm font-semibold">Muster</span>
+          <div className="flex items-center gap-2">
+            <MusterIcon className="h-6 w-6" />
+            <span className="text-sm font-semibold">{brand ?? "Muster"}</span>
+          </div>
           <div className="flex items-center gap-2">
             {headerActions}
             <DisplaySettings />

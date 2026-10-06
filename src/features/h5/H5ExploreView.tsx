@@ -1,5 +1,6 @@
-import { H5Explorer } from "@tiled/client-h5web";
+import { H5Explorer } from "@tiled/client-h5web-react";
 import { useOptionalTiledClient } from "@/config/useTiledClient";
+import "./h5web-theme.css";
 
 export interface H5ExploreViewProps {
   /** Tiled segments of the HDF5 root container node (the whole-file node). */
@@ -8,7 +9,7 @@ export interface H5ExploreViewProps {
 
 /**
  * App adapter for the h5web explorer: supplies the active configured Tiled
- * client to the framework-agnostic `H5Explorer` from @tiled/client-h5web.
+ * client to the React `H5Explorer` from @tiled/client-h5web-react.
  */
 export function H5ExploreView({ segments }: H5ExploreViewProps) {
   const client = useOptionalTiledClient();
@@ -18,7 +19,7 @@ export function H5ExploreView({ segments }: H5ExploreViewProps) {
     <H5Explorer
       client={client}
       segments={segments}
-      className="h-[70vh] overflow-hidden rounded-md border bg-background"
+      className="h5web-themed h-[70vh] overflow-hidden rounded-md border bg-background"
     />
   );
 }

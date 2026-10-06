@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
-import { Server } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MusterIcon } from "@/components/common/MusterLogo";
 import type { NavRouteItem } from "@/types/navigation";
 
 export interface SidebarProps {
@@ -13,7 +13,7 @@ export function Sidebar({ routes, brand = "Muster" }: SidebarProps) {
   return (
     <aside className="flex h-full w-56 flex-col border-r bg-card">
       <div className="flex items-center gap-2 border-b px-4 py-3">
-        <Server className="h-5 w-5 text-primary" />
+        <MusterIcon className="h-6 w-6" />
         <span className="text-sm font-semibold">{brand}</span>
       </div>
       <nav className="flex-1 space-y-1 p-2">

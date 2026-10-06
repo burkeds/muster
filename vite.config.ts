@@ -8,10 +8,12 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
-      // Consume the migrated h5web plugin from the monorepo package source.
+      // Consume the React h5web plugin from the sibling monorepo package source.
       {
-        find: '@tiled/client-h5web',
-        replacement: fileURLToPath(new URL('../tiled-client-h5web/src/index.ts', import.meta.url)),
+        find: '@tiled/client-h5web-react',
+        replacement: fileURLToPath(
+          new URL('../tiled-client-h5web/packages/react/src/index.ts', import.meta.url),
+        ),
       },
       // plotly.js's CJS source breaks under Vite's dev optimizer (the image trace
       // requires 'buffer/', pre-bundling throws on `global` / `.prototype`). Use the

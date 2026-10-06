@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 116 116" width="116" height="116" role="img" aria-label="Muster">
+  <rect width="116" height="116" rx="26" fill="#0B2545"/>
+  <g transform="translate(25.375 25.375) scale(0.5625)">
+    <g fill="#8FD3F4">
+      <rect x="0" y="0" width="20" height="20" rx="4"/>
+      <rect x="96" y="0" width="20" height="20" rx="4"/>
+      <rect x="0" y="24" width="20" height="20" rx="4"/>
+      <rect x="24" y="24" width="20" height="20" rx="4"/>
+      <rect x="72" y="24" width="20" height="20" rx="4"/>
+      <rect x="96" y="24" width="20" height="20" rx="4"/>
+      <rect x="0" y="48" width="20" height="20" rx="4"/>
+      <rect x="96" y="48" width="20" height="20" rx="4"/>
+      <rect x="0" y="72" width="20" height="20" rx="4"/>
+      <rect x="96" y="72" width="20" height="20" rx="4"/>
+      <rect x="0" y="96" width="20" height="20" rx="4"/>
+      <rect x="96" y="96" width="20" height="20" rx="4"/>
+    </g>
+    <rect x="48" y="48" width="20" height="20" rx="4" fill="#B5F23D"/>
+  </g>
+</svg>
